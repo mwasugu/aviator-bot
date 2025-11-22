@@ -1,17 +1,229 @@
-<!DOCTYPE html><html><head><meta charset="utf-8"><title>Aviator Bot Stable</title><style>body { background:#0d0d10; color:#fff; font-family:Arial; padding:20px; }.box { background:#16161c; padding:20px; border-radius:10px; border:1px solid #ff0044; }input, button { width:100%; padding:10px; margin-top:10px; border-radius:6px; font-size:16px; }button { background:#ff0044; color:#fff; border:none; cursor:pointer; }.history { max-height:150px; overflow-y:auto; background:#111; margin-top:10px; padding:10px; border-radius:8px; }</style></head><body>
-<div class="box"><h2>Aviator Predictor (Stable Build)</h2><p>Ingiza last multiplier:</p>
-<input id="last" type="number" step="0.01" placeholder="mfano 1.12"><button onclick="predict()">Predict Next</button>
-<div id="result" style="margin-top:15px;"></div>
-<h3>History</h3><div id="history" class="history"></div></div>
-<script>let h = JSON.parse(localStorage.getItem("histo") || "[]");
-function save(){  localStorage.setItem("histo", JSON.stringify(h));}
-function showHistory(){  let box = document.getElementById("history");  if(h.length===0){ box.innerHTML = "No history yet"; return; }  box.innerHTML = h.slice().reverse().map(x=>"• "+x+"x").join("<br>");}
-function predict(){  let v = parseFloat(document.getElementById("last").value);  if(!v || v<1){     document.getElementById("result").innerHTML = "Ingiza number sahihi";     return;  }
-  h.push(v);  save();  showHistory();
-  let avg = h.reduce((a,b)=>a+b,0) / h.length;  let last3 = h.slice(-3);  let trend = last3.reduce((a,b)=>a+b,0) / last3.length;
-  let next;
-  if(trend < 1.20){    next = 1 + Math.random()*0.40;  } else if(trend < 2){    next = 1.20 + Math.random()*1.0;  } else {    next = 2 + Math.random()*3.0;  }
-  next = next.toFixed(2);
-  document.getElementById("result").innerHTML =     "Next Estimated: <b style='color:#00ff8f'>"+next+"x</b>";}
-showHistory();</script>
-</body></html>
+<!DOCTYPE html>
+<html lang="sw">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Aviator Prediction Simulator (GitHub Pages)</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            background-color: #121212;
+            color: #e0e0e0;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .container {
+            background-color: #1e1e1e;
+            padding: 25px;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
+            width: 100%;
+            max-width: 450px;
+        }
+        h1 {
+            color: #00e676;
+            text-align: center;
+            margin-bottom: 25px;
+        }
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: bold;
+            color: #bdbdbd;
+        }
+        input[type="number"] {
+            width: calc(100% - 22px);
+            padding: 10px;
+            margin-bottom: 20px;
+            border-radius: 6px;
+            border: 1px solid #333;
+            background-color: #2c2c2c;
+            color: #fff;
+            font-size: 16px;
+        }
+        button {
+            width: 100%;
+            padding: 12px;
+            border: none;
+            border-radius: 6px;
+            font-size: 18px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        #predictBtn {
+            background-color: #00e676;
+            color: #121212;
+            margin-bottom: 15px;
+        }
+        #predictBtn:hover {
+            background-color: #69f0ae;
+        }
+        .result-box {
+            margin-top: 25px;
+            padding: 15px;
+            border-radius: 8px;
+            background-color: #2c2c2c;
+            border-left: 5px solid #00e676;
+        }
+        .prediction {
+            font-size: 24px;
+            font-weight: bold;
+            color: #ff9800;
+            margin: 10px 0;
+            text-align: center;
+        }
+        .jackpot {
+            font-size: 18px;
+            color: #e57373;
+            text-align: center;
+            margin-bottom: 10px;
+        }
+        .learning-status {
+            font-size: 14px;
+            color: #bdbdbd;
+            margin-top: 15px;
+            text-align: center;
+            border-top: 1px dashed #444;
+            padding-top: 10px;
+        }
+        .disclaimer {
+            font-size: 12px;
+            color: #9e9e9e;
+            margin-top: 20px;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🚀 Aviator Prediction Simulator</h1>
+
+        <label for="lastRound">Weka Matokeo ya Mzunguko Uliopita (Multiplier):</label>
+        <input type="number" id="lastRound" step="0.01" placeholder="Mfano: 1.50 au 8.23">
+
+        <button id="predictBtn">Tabiri Mzunguko Unaofuata</button>
+        
+        <div id="logSection" style="margin-top: 15px;">
+            <label for="actualResult">Matokeo Halisi Baada ya Utabiri (Kwa ajili ya Kujifunza):</label>
+            <input type="number" id="actualResult" step="0.01" placeholder="Weka matokeo halisi hapa">
+            <button id="logResultBtn" style="background-color: #5e35b1;">Ingiza Matokeo na Jifunze</button>
+        </div>
+
+
+        <div id="results" class="result-box">
+            <div class="jackpot" id="jackpotStatus"></div>
+            <div class="prediction" id="predictionResult">Bonyeza "Tabiri" kuanza.</div>
+            <div class="learning-status" id="learningStatus"></div>
+        </div>
+
+        <p class="disclaimer">
+            Kanusho: Code hii ni ya mafunzo tu. Haiwezi kutabiri matokeo ya michezo ya kubahatisha ya RNG (Random Number Generator). Tumia kwa tahadhari.
+        </p>
+
+    </div>
+
+    <script>
+        // Mfumo wa Kujifunza (Learning Mechanism)
+        let attempts = parseInt(localStorage.getItem('aviator_attempts') || 0);
+        let mistakes = parseInt(localStorage.getItem('aviator_mistakes') || 0);
+        let lastPredicted = null;
+
+        const predictionResultEl = document.getElementById('predictionResult');
+        const jackpotStatusEl = document.getElementById('jackpotStatus');
+        const learningStatusEl = document.getElementById('learningStatus');
+        const lastRoundInput = document.getElementById('lastRound');
+        const actualResultInput = document.getElementById('actualResult');
+        const predictBtn = document.getElementById('predictBtn');
+        const logResultBtn = document.getElementById('logResultBtn');
+
+        // Onyesha hali ya kujifunza mwanzoni
+        function updateLearningStatus() {
+            learningStatusEl.textContent = 
+                `Majukumu ya Utabiri: ${attempts} | Makosa (Simulated): ${mistakes} | Makosa yanaathiri utabiri ujao.`;
+        }
+
+        // Kazi ya Kutabiri Multiplier (Simple Heuristic Logic)
+        function predictMultiplier(last) {
+            // Fanya utabiri kuwa mbaya zaidi (random zaidi) kadiri makosa yanavyoongezeka
+            const errorFactor = 1 + (mistakes / 50); // Mfumo huu ni wa kuiga tu
+
+            if (last < 1.3) {
+                // Low: Utabiri wa kiasi cha kati
+                return (Math.random() * 2 * errorFactor + 1.2).toFixed(2); 
+            } else if (last >= 1.3 && last < 3.0) {
+                // Medium: Utabiri wa chini
+                return (Math.random() * 1.5 * errorFactor + 1.0).toFixed(2);
+            } else {
+                // High: Utabiri wa chini sana
+                return (Math.random() * 0.5 * errorFactor + 1.0).toFixed(2); 
+            }
+        }
+
+        // Kazi ya Kutabiri Jackpot (Random Chance)
+        function checkJackpot() {
+            const chance = Math.random();
+            if (chance > 0.98) {
+                return "🚨 JACKPOT TAHARUKI! (Jihadharini - fursa ndogo sana)";
+            } else if (chance > 0.85) {
+                return "💡 Utabiri: Fursa ya Juu ya Jackpot";
+            } else {
+                return "💤 Fursa ya Kawaida ya Jackpot";
+            }
+        }
+
+        // Matukio ya Kubonyeza Kitufe cha Utabiri
+        predictBtn.addEventListener('click', () => {
+            const lastRound = parseFloat(lastRoundInput.value);
+            if (isNaN(lastRound) || lastRound <= 0.99) {
+                predictionResultEl.textContent = "Weka namba sahihi (Multipler > 1.0)";
+                return;
+            }
+
+            // Fanya utabiri
+            const prediction = predictMultiplier(lastRound);
+            const jackpot = checkJackpot();
+            
+            lastPredicted = prediction; // Hifadhi utabiri wa sasa
+            predictionResultEl.innerHTML = `NEXT PREDICTION: <span style="color:#00e676;">${prediction}x</span>`;
+            jackpotStatusEl.textContent = jackpot;
+            actualResultInput.value = ''; // Safisha uwanja wa matokeo halisi
+        });
+
+        // Matukio ya Kuingiza Matokeo Halisi (Kwa ajili ya Kujifunza)
+        logResultBtn.addEventListener('click', () => {
+            const actual = parseFloat(actualResultInput.value);
+            if (!lastPredicted) {
+                alert("Tafadhali fanya utabiri kwanza kabla ya kuingiza matokeo halisi.");
+                return;
+            }
+
+            if (isNaN(actual) || actual <= 0.99) {
+                alert("Weka matokeo halisi kwa usahihi.");
+                return;
+            }
+
+            attempts++;
+            // Ikiwa tofauti kati ya utabiri na matokeo halisi ni kubwa (zaidi ya 2.0x), mfumo unahesabu kama 'kosa'.
+            if (Math.abs(parseFloat(lastPredicted) - actual) > 2.0) { 
+                mistakes++;
+            }
+
+            // Hifadhi kwenye Local Storage
+            localStorage.setItem('aviator_attempts', attempts);
+            localStorage.setItem('aviator_mistakes', mistakes);
+
+            lastPredicted = null;
+            updateLearningStatus();
+            alert(`Matokeo Halisi (${actual}x) yamehifadhiwa! Mfumo unaendelea kujifunza. `);
+            predictionResultEl.textContent = "Tayari kwa Utabiri Mpya.";
+        });
+
+        // Kuanzisha app
+        updateLearningStatus();
+    </script>
+</body>
+</html>
