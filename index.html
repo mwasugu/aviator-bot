@@ -1,123 +1,22 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Aviator Predictor - Premium V3</title>
-
-<style>
-body {
-    margin: 0;
-    padding: 0;
-    background: #0b0b0e;
-    font-family: Arial, sans-serif;
-    color: white;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    height: 100vh;
-}
-
-.container {
-    width: 90%;
-    max-width: 420px;
-    background: #13131a;
-    padding: 25px;
-    border-radius: 15px;
-    box-shadow: 0 0 20px #ff0044;
-    text-align: center;
-    border: 1px solid #ff0044;
-}
-
-h1 {
-    color: #ff0044;
-    font-size: 26px;
-    margin-bottom: 10px;
-}
-
-p {
-    margin-top: 5px;
-    color: #bbbbbb;
-}
-
-#resultBox {
-    margin-top: 25px;
-    padding: 20px;
-    border-radius: 10px;
-    border: 1px solid #ff0044;
-    background: #1b1b24;
-    font-size: 24px;
-    font-weight: bold;
-    min-height: 40px;
-    transition: 0.3s ease-in-out;
-}
-
-button {
-    margin-top: 25px;
-    padding: 15px 25px;
-    font-size: 20px;
-    background: #ff0044;
-    color: white;
-    border: none;
-    border-radius: 10px;
-    cursor: pointer;
-    transition: 0.25s;
-    width: 100%;
-}
-
-button:hover {
-    background: #ff335f;
-}
-
-.safe {
-    color: #00ff88;
-}
-
-.risk {
-    color: #ff0044;
-}
-
-.loading {
-    font-size: 18px;
-    color: #ffcc00;
-}
-</style>
-</head>
-
-<body>
-
-<div class="container">
-    <h1>Aviator Predictor V3</h1>
-    <p>Premium AI-Based Multiplier Analysis</p>
-
-    <div id="resultBox">Tap Predict to Start...</div>
-
-    <button onclick="predict()">PREDICT</button>
-</div>
-
-<script>
-function predict() {
-    let box = document.getElementById("resultBox");
-
-    box.innerHTML = "Analyzing round...";
-    box.className = "loading";
-
-    setTimeout(() => {
-        let n = (Math.random() * 10).toFixed(2);
-
-        if (n < 1.30) {
-            box.innerHTML = "⚠️ RISK ROUND: " + n + "x";
-            box.className = "risk";
-        } else if (n < 2.00) {
-            box.innerHTML = "🟡 MID ROUND: " + n + "x";
-            box.className = "safe";
-        } else {
-            box.innerHTML = "🟢 SAFE ROUND: " + n + "x";
-            box.className = "safe";
-        }
-    }, 1200);
-}
-</script>
-
-</body>
-</html>
+<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Aviator Learning Predictor V4</title>
+<style>body{    background:#0b0b0e;    font-family:Arial;    color:white;    margin:0;    padding:20px;    display:flex;    justify-content:center;}.box{    width:95%;    max-width:430px;    background:#13131a;    padding:25px;    border-radius:15px;    border:1px solid #ff0044;    box-shadow:0 0 20px #ff0044;}input{    width:90%;    padding:12px;    font-size:18px;    border-radius:10px;    margin-top:10px;    border:1px solid #ff0044;    background:#1b1b24;    color:#fff;}button{    width:100%;    margin-top:20px;    padding:15px;    background:#ff0044;    border:none;    border-radius:10px;    font-size:20px;    color:white;    cursor:pointer;}button:hover{    background:#ff2c5c;}.result{    margin-top:20px;    padding:15px;    border-radius:10px;    background:#1b1b24;    border:1px solid #ff0044;    font-size:20px;}.safe{color:#00ff88;}.risk{color:#ff0044;}.jackpot{color:#ffcc00;}
+.history-box{    margin-top:25px;    padding:15px;    background:#1b1b24;    border-radius:10px;    border:1px solid #ff0044;    max-height:220px;    overflow-y:scroll;}.history-item{    padding:8px;    border-bottom:1px solid #252530;    font-size:18px;}</style></head>
+<body><div class="box">    <h1>Aviator Predictor AI V4</h1>    <p>Enter last multiplier</p>
+    <input id="last" type="number" step="0.01" placeholder="Example: 1.07">    <button onclick="predict()">Predict Next</button>
+    <div id="next" class="result">Waiting...</div>    <div id="jackpot" class="result">Jackpot Status...</div>
+    <h2 style="margin-top:25px;color:#ff0044;">History</h2>
+    <div id="historyBox" class="history-box">        <!-- Auto-filled history -->    </div></div>
+<script>let history = JSON.parse(localStorage.getItem("aviator_history") || "[]");
+function updateHistoryDisplay(){    let box = document.getElementById("historyBox");    box.innerHTML = "";
+    [...history].reverse().forEach((x, i)=>{        box.innerHTML += `<div class="history-item">${i+1}. ${x}x</div>`;    });}
+updateHistoryDisplay();
+function predict(){    let last = parseFloat(document.getElementById("last").value);    if(!last){ alert("Enter multiplier first"); return;}
+    // Save    history.push(last);    localStorage.setItem("aviator_history", JSON.stringify(history));    updateHistoryDisplay();
+    let nextBox = document.getElementById("next");    let jackpotBox = document.getElementById("jackpot");
+    // Trend calculations    let avg = history.reduce((a,b)=>a+b,0) / history.length;    let last3 = history.slice(-3);    let trend = last3.reduce((a,b)=>a+b,0) / last3.length;
+    let predicted;
+    if(trend < 1.20){        predicted = (1 + Math.random()*0.3).toFixed(2);        nextBox.className = "result risk";    }     else if(trend < 2){        predicted = (1.20 + Math.random()*1).toFixed(2);        nextBox.className = "result safe";    }     else {        predicted = (2 + Math.random()*3).toFixed(2);        nextBox.className = "result safe";    }
+    nextBox.innerHTML = "Next Estimated: " + predicted + "x";
+    // Jackpot logic    let highRounds = history.filter(x => x >= 10).length;    let jackpotChance = (highRounds / history.length) * 100;
+    if(jackpotChance > 8){        jackpotBox.innerHTML = " Jackpot Chance Detected!";        jackpotBox.className = "result jackpot";    } else {        jackpotBox.innerHTML = "No jackpot signs";        jackpotBox.className = "result risk";    }}</script>
+</body></html>
