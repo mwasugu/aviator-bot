@@ -1,31 +1,17 @@
-<!DOCTYPE html><html lang="sw"><head><meta charset="utf-8" /><meta name="viewport" content="width=device-width,initial-scale=1" /><title>Aviator Predictor - Fix</title><style>  body { background:#0b0b0e; color:#fff; font-family:Arial, Helvetica, sans-serif; padding:18px; }  .card { max-width:480px; margin:18px auto; background:#121217; padding:18px; border-radius:12px; border:1px solid #ff0044; box-shadow:0 6px 24px rgba(255,0,68,0.08);}  h1 { color:#ff0044; margin:0 0 8px; font-size:20px; }  p { color:#ccc; margin:6px 0 12px; }  input[type=number] { width:100%; padding:10px; border-radius:8px; border:1px solid #333; background:#0f0f12; color:#fff; font-size:16px; box-sizing:border-box;}  button { width:100%; margin-top:10px; padding:12px; font-size:16px; border-radius:8px; border:none; background:#ff0044; color:#fff; cursor:pointer; }  .out { margin-top:12px; padding:12px; border-radius:8px; background:#0f0f12; border:1px solid #222; min-height:38px; }  .msg { margin-top:8px; color:#ffcc00; font-weight:bold; }  .history { margin-top:14px; background:#0f0f12; padding:10px; border-radius:8px; max-height:220px; overflow:auto; border:1px solid #222; }  .hist-item { padding:6px 4px; border-bottom:1px dashed #1b1b1f; color:#ddd; }  .small { font-size:13px; color:#aaa; margin-top:8px; }  .controls { display:flex; gap:8px; margin-top:10px; }  .controls button { flex:1; background:#333; }  .result-safe { color:#00ff9d; font-weight:bold; }  .result-risk { color:#ff6b6b; font-weight:bold; }  .result-jack { color:#ffd24d; font-weight:bold; }  .error { color:#ff6b6b; font-weight:bold; }  footer { text-align:center; color:#888; font-size:12px; margin-top:12px; }</style></head><body>  <div class="card">    <h1>Aviator Predictor (Fixed & Improved)</h1>    <p>Ingiza last multiplier kisha bonyeza <b>Predict Next</b> (au Enter). History inahifadhiwa browser.</p>
-    <input id="lastInput" type="number" step="0.01" placeholder="Mfano: 1.07" />    <button id="predictBtn">Predict Next</button>
-    <div id="output" class="out">Result will appear here.</div>    <div id="jack" class="out small">Jackpot status will appear here.</div>
-    <div class="controls">      <button id="clearBtn">Clear History</button>      <button id="showConsoleBtn">Show Console Log</button>    </div>
-    <h3 style="color:#ff0044;margin-top:12px;">History</h3>    <div id="historyBox" class="history">      <div class="hist-item small">No history yet.</div>    </div>
-    <div id="debug" class="msg" style="display:none"></div>    <footer>Local learning only — not a hack. Use responsibly.</footer>  </div>
-<script>(function(){  // init  const input = document.getElementById('lastInput');  const predictBtn = document.getElementById('predictBtn');  const output = document.getElementById('output');  const jack = document.getElementById('jack');  const historyBox = document.getElementById('historyBox');  const clearBtn = document.getElementById('clearBtn');  const showConsoleBtn = document.getElementById('showConsoleBtn');  const debug = document.getElementById('debug');
-  // Load history from localStorage (robust)  let history = [];  try {    const raw = localStorage.getItem('aviator_history_v4');    if (raw) history = JSON.parse(raw) || [];  } catch(e) {    console.error('Error loading history', e);    debug.style.display = 'block';    debug.textContent = 'Error reading history from localStorage (check console).';  }
-  function saveHistory() {    try {      localStorage.setItem('aviator_history_v4', JSON.stringify(history));    } catch(e) {      console.error('Save error', e);      debug.style.display = 'block';      debug.textContent = 'Unable to save history (localStorage full or disabled).';    }  }
-  function renderHistory() {    if (!history.length) {      historyBox.innerHTML = '<div class="hist-item small">No history yet.</div>';      return;    }    // newest first    historyBox.innerHTML = history.slice().reverse().map((v,i)=>{      const idx = history.length - i;      return `<div class="hist-item">${idx}. <b>${v}x</b></div>`;    }).join('');  }
-  function average(arr){    if(!arr.length) return 0;    return arr.reduce((a,b)=>a+b,0)/arr.length;  }
-  function predictNextFrom(historyArr){    // robust checks    const len = historyArr.length;    if(len === 0) return {pred: (1 + Math.random()*0.5).toFixed(2), tag:'neutral'};
-    const avg = average(historyArr);    const last3 = historyArr.slice(-3);    const last = historyArr[historyArr.length-1];    const trend = last3.length ? (last3.reduce((a,b)=>a+b,0)/last3.length) : avg;
-    // volatility measure    const diffs = historyArr.map(v => Math.abs(v - avg));    const vol = average(diffs);
-    // prediction logic (heuristic, not magic)    let predicted;    let tag = 'neutral';    if (trend < 1.2) {      predicted = 1 + Math.random()*0.35; // mostly low      tag = 'risk';    } else if (trend < 2.0) {      predicted = 1.2 + Math.random()*1.0; // mid      tag = 'safe';    } else {      predicted = 2.0 + Math.random()*3.0; // possibility of high      tag = 'safe-high';    }
-    // adjust by volatility: if high vol, allow wider swing    predicted += (Math.random()-0.5) * (vol * 0.2);
-    // precision    predicted = Math.max(1.00, predicted);    return { pred: predicted.toFixed(2), tag };  }
-  function checkJackpot(historyArr){    if(historyArr.length < 6) return {jack:false, pct:0};
-    const bigs = historyArr.filter(v => v >= 10).length;    const pct = (bigs / historyArr.length) * 100;    return { jack: pct >= 5, pct: Math.round(pct*100)/100 };  }
-  // event handlers  function doPredict(){    debug.style.display = 'none';    output.className = 'out';    jack.className = 'out small';
-    const val = parseFloat(input.value);    if (!val || isNaN(val) || val < 1.0) {      output.innerHTML = '<span class="error">Ingiza multiplier halali (>= 1.00)</span>';      return;    }
-    // push into history and save    history.push(Number(val));    saveHistory();    renderHistory();
-    // compute prediction    const r = predictNextFrom(history);    const jackpot = checkJackpot(history);
-    // show prediction    let html = `Next Estimated: <span class="${r.tag==='risk' ? 'result-risk' : 'result-safe'}"><b>${r.pred}x</b></span>`;    output.innerHTML = html;
-    // show jackpot    if (jackpot.jack) {      jack.innerHTML = ` Jackpot sign detected (${jackpot.pct}% of rounds ≥10x in history)`;      jack.className = 'out result-jack';    } else {      jack.innerHTML = `Jackpot chance: ${jackpot.pct}%`;      jack.className = 'out small';    }
-    // clear input for convenience and focus    input.value = '';    input.focus();  }
-  // wire up button + Enter key  predictBtn.addEventListener('click', doPredict);  input.addEventListener('keydown', function(e){    if(e.key === 'Enter') { doPredict(); e.preventDefault(); }  });
-  clearBtn.addEventListener('click', function(){    if(!confirm('Unataka kufuta history yote?')) return;    history = [];    saveHistory();    renderHistory();    output.innerHTML = 'History cleared';    jack.innerHTML = '';  });
-  showConsoleBtn.addEventListener('click', function(){    // hint to open browser console    alert('Open browser console (F12) to view logs. If nothing shows, check browser blockers.');  });
-  // initial render  renderHistory();
-  // expose for debug (optional)  window._aviator_debug = { history, predictNextFrom, checkJackpot, saveHistory };})();</script></body></html>
+<!DOCTYPE html><html><head><meta charset="utf-8"><title>Aviator Bot Stable</title><style>body { background:#0d0d10; color:#fff; font-family:Arial; padding:20px; }.box { background:#16161c; padding:20px; border-radius:10px; border:1px solid #ff0044; }input, button { width:100%; padding:10px; margin-top:10px; border-radius:6px; font-size:16px; }button { background:#ff0044; color:#fff; border:none; cursor:pointer; }.history { max-height:150px; overflow-y:auto; background:#111; margin-top:10px; padding:10px; border-radius:8px; }</style></head><body>
+<div class="box"><h2>Aviator Predictor (Stable Build)</h2><p>Ingiza last multiplier:</p>
+<input id="last" type="number" step="0.01" placeholder="mfano 1.12"><button onclick="predict()">Predict Next</button>
+<div id="result" style="margin-top:15px;"></div>
+<h3>History</h3><div id="history" class="history"></div></div>
+<script>let h = JSON.parse(localStorage.getItem("histo") || "[]");
+function save(){  localStorage.setItem("histo", JSON.stringify(h));}
+function showHistory(){  let box = document.getElementById("history");  if(h.length===0){ box.innerHTML = "No history yet"; return; }  box.innerHTML = h.slice().reverse().map(x=>"• "+x+"x").join("<br>");}
+function predict(){  let v = parseFloat(document.getElementById("last").value);  if(!v || v<1){     document.getElementById("result").innerHTML = "Ingiza number sahihi";     return;  }
+  h.push(v);  save();  showHistory();
+  let avg = h.reduce((a,b)=>a+b,0) / h.length;  let last3 = h.slice(-3);  let trend = last3.reduce((a,b)=>a+b,0) / last3.length;
+  let next;
+  if(trend < 1.20){    next = 1 + Math.random()*0.40;  } else if(trend < 2){    next = 1.20 + Math.random()*1.0;  } else {    next = 2 + Math.random()*3.0;  }
+  next = next.toFixed(2);
+  document.getElementById("result").innerHTML =     "Next Estimated: <b style='color:#00ff8f'>"+next+"x</b>";}
+showHistory();</script>
+</body></html>
