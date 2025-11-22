@@ -1,22 +1,128 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Aviator Learning Predictor V4</title>
-<style>body{    background:#0b0b0e;    font-family:Arial;    color:white;    margin:0;    padding:20px;    display:flex;    justify-content:center;}.box{    width:95%;    max-width:430px;    background:#13131a;    padding:25px;    border-radius:15px;    border:1px solid #ff0044;    box-shadow:0 0 20px #ff0044;}input{    width:90%;    padding:12px;    font-size:18px;    border-radius:10px;    margin-top:10px;    border:1px solid #ff0044;    background:#1b1b24;    color:#fff;}button{    width:100%;    margin-top:20px;    padding:15px;    background:#ff0044;    border:none;    border-radius:10px;    font-size:20px;    color:white;    cursor:pointer;}button:hover{    background:#ff2c5c;}.result{    margin-top:20px;    padding:15px;    border-radius:10px;    background:#1b1b24;    border:1px solid #ff0044;    font-size:20px;}.safe{color:#00ff88;}.risk{color:#ff0044;}.jackpot{color:#ffcc00;}
-.history-box{    margin-top:25px;    padding:15px;    background:#1b1b24;    border-radius:10px;    border:1px solid #ff0044;    max-height:220px;    overflow-y:scroll;}.history-item{    padding:8px;    border-bottom:1px solid #252530;    font-size:18px;}</style></head>
-<body><div class="box">    <h1>Aviator Predictor AI V4</h1>    <p>Enter last multiplier</p>
-    <input id="last" type="number" step="0.01" placeholder="Example: 1.07">    <button onclick="predict()">Predict Next</button>
-    <div id="next" class="result">Waiting...</div>    <div id="jackpot" class="result">Jackpot Status...</div>
-    <h2 style="margin-top:25px;color:#ff0044;">History</h2>
-    <div id="historyBox" class="history-box">        <!-- Auto-filled history -->    </div></div>
-<script>let history = JSON.parse(localStorage.getItem("aviator_history") || "[]");
-function updateHistoryDisplay(){    let box = document.getElementById("historyBox");    box.innerHTML = "";
-    [...history].reverse().forEach((x, i)=>{        box.innerHTML += `<div class="history-item">${i+1}. ${x}x</div>`;    });}
-updateHistoryDisplay();
-function predict(){    let last = parseFloat(document.getElementById("last").value);    if(!last){ alert("Enter multiplier first"); return;}
-    // Save    history.push(last);    localStorage.setItem("aviator_history", JSON.stringify(history));    updateHistoryDisplay();
-    let nextBox = document.getElementById("next");    let jackpotBox = document.getElementById("jackpot");
-    // Trend calculations    let avg = history.reduce((a,b)=>a+b,0) / history.length;    let last3 = history.slice(-3);    let trend = last3.reduce((a,b)=>a+b,0) / last3.length;
-    let predicted;
-    if(trend < 1.20){        predicted = (1 + Math.random()*0.3).toFixed(2);        nextBox.className = "result risk";    }     else if(trend < 2){        predicted = (1.20 + Math.random()*1).toFixed(2);        nextBox.className = "result safe";    }     else {        predicted = (2 + Math.random()*3).toFixed(2);        nextBox.className = "result safe";    }
-    nextBox.innerHTML = "Next Estimated: " + predicted + "x";
-    // Jackpot logic    let highRounds = history.filter(x => x >= 10).length;    let jackpotChance = (highRounds / history.length) * 100;
-    if(jackpotChance > 8){        jackpotBox.innerHTML = " Jackpot Chance Detected!";        jackpotBox.className = "result jackpot";    } else {        jackpotBox.innerHTML = "No jackpot signs";        jackpotBox.className = "result risk";    }}</script>
-</body></html>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<title>Aviator Predictor 3.0</title>
+<style>
+    body {
+        font-family: Arial, sans-serif;
+        background: #111;
+        color: #fff;
+        padding: 20px;
+        text-align: center;
+    }
+
+    h1 { color: #ff3d3d; }
+
+    input {
+        padding: 10px;
+        width: 200px;
+        border-radius: 8px;
+        border: none;
+        margin-top: 10px;
+        font-size: 18px;
+        text-align: center;
+    }
+
+    button {
+        padding: 10px 25px;
+        margin-top: 12px;
+        background: #ff3d3d;
+        border: none;
+        border-radius: 10px;
+        color: white;
+        font-size: 18px;
+        cursor: pointer;
+    }
+
+    #output {
+        margin-top: 20px;
+        font-size: 22px;
+    }
+
+    #historyBox {
+        margin-top: 25px;
+        padding: 15px;
+        background: #222;
+        border-radius: 10px;
+        font-size: 18px;
+    }
+</style>
+</head>
+
+<body>
+
+<h1>Aviator Predictor (Learning Mode)</h1>
+
+<p>Enter last multiplier:</p>
+<input id="lastInput" type="number" step="0.01" placeholder="Example: 1.56">
+
+<br>
+<button onclick="predict()">Predict Next</button>
+
+<div id="output"></div>
+
+<div id="historyBox">
+    <h3>History:</h3>
+    <div id="historyList">None yet</div>
+</div>
+
+<script>
+    let history = [];
+
+    function predict() {
+        let last = parseFloat(document.getElementById("lastInput").value);
+
+        if (!last || last < 1.00) {
+            document.getElementById("output").innerHTML = "Enter a valid last multiplier!";
+            return;
+        }
+
+        // Save to history
+        history.push(last);
+
+        // BASIC LEARNING MODEL -----------------------
+        let avg = average(history);
+        let variance = Math.abs(last - avg);
+
+        // Prediction logic
+        let next;
+        if (variance < 0.2) {
+            next = last + (Math.random() * 0.20);
+        } else if (variance < 0.5) {
+            next = last + (Math.random() * 0.50);
+        } else {
+            next = avg + (Math.random() * 0.40);
+        }
+
+        next = next.toFixed(2);
+
+        // Jackpot detection
+        let jackpotChance = "";
+        if (last >= 3.0 && history.length > 4) {
+            let highCount = history.filter(v => v >= 2.5).length;
+            if (highCount >= 2) {
+                jackpotChance = "<br><span style='color:yellow'>⚠ Possible Jackpot Incoming!</span>";
+            }
+        }
+
+        // Display
+        document.getElementById("output").innerHTML =
+            `<br>Next Multiplier: <b style='color:#00ff9d'>${next}x</b>${jackpotChance}`;
+
+        // Update history visual
+        updateHistoryBox();
+    }
+
+    function average(arr) {
+        return arr.reduce((a,b)=>a+b,0) / arr.length;
+    }
+
+    function updateHistoryBox() {
+        document.getElementById("historyList").innerHTML =
+            history.map(v => v + "x").join(" — ");
+    }
+</script>
+
+</body>
+</html>
