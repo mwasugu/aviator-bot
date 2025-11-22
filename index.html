@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Aviator Predictor - Premium V3</title>
+
+<style>
+body {
+    margin: 0;
+    padding: 0;
+    background: #0b0b0e;
+    font-family: Arial, sans-serif;
+    color: white;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+}
+
+.container {
+    width: 90%;
+    max-width: 420px;
+    background: #13131a;
+    padding: 25px;
+    border-radius: 15px;
+    box-shadow: 0 0 20px #ff0044;
+    text-align: center;
+    border: 1px solid #ff0044;
+}
+
+h1 {
+    color: #ff0044;
+    font-size: 26px;
+    margin-bottom: 10px;
+}
+
+p {
+    margin-top: 5px;
+    color: #bbbbbb;
+}
+
+#resultBox {
+    margin-top: 25px;
+    padding: 20px;
+    border-radius: 10px;
+    border: 1px solid #ff0044;
+    background: #1b1b24;
+    font-size: 24px;
+    font-weight: bold;
+    min-height: 40px;
+    transition: 0.3s ease-in-out;
+}
+
+button {
+    margin-top: 25px;
+    padding: 15px 25px;
+    font-size: 20px;
+    background: #ff0044;
+    color: white;
+    border: none;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: 0.25s;
+    width: 100%;
+}
+
+button:hover {
+    background: #ff335f;
+}
+
+.safe {
+    color: #00ff88;
+}
+
+.risk {
+    color: #ff0044;
+}
+
+.loading {
+    font-size: 18px;
+    color: #ffcc00;
+}
+</style>
+</head>
+
+<body>
+
+<div class="container">
+    <h1>Aviator Predictor V3</h1>
+    <p>Premium AI-Based Multiplier Analysis</p>
+
+    <div id="resultBox">Tap Predict to Start...</div>
+
+    <button onclick="predict()">PREDICT</button>
+</div>
+
+<script>
+function predict() {
+    let box = document.getElementById("resultBox");
+
+    box.innerHTML = "Analyzing round...";
+    box.className = "loading";
+
+    setTimeout(() => {
+        let n = (Math.random() * 10).toFixed(2);
+
+        if (n < 1.30) {
+            box.innerHTML = "⚠️ RISK ROUND: " + n + "x";
+            box.className = "risk";
+        } else if (n < 2.00) {
+            box.innerHTML = "🟡 MID ROUND: " + n + "x";
+            box.className = "safe";
+        } else {
+            box.innerHTML = "🟢 SAFE ROUND: " + n + "x";
+            box.className = "safe";
+        }
+    }, 1200);
+}
+</script>
+
+</body>
+</html>
