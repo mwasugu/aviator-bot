@@ -3,9 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Aviator Prediction Simulator (Ultimate)</title>
+    <title>Aviator Prediction Simulator (Live Time Learning)</title>
     <style>
-        /* CSS YA UREMBO MPYA INAANZA HAPA */
+        /* CSS INAANZA HAPA - DESIGN BORA */
         body {
             font-family: 'Arial', sans-serif;
             background-color: #0d0d0d;
@@ -113,16 +113,19 @@
         .zone-status.red { color: #E57373; }
         .zone-status.green { color: #8BC34A; }
         .zone-status.orange { color: #FF9800; }
-        .cashout {
+
+        /* RISK ASSESSMENT SECTION */
+        #riskAssessment {
+            background-color: #333;
+            color: #fff;
+            padding: 10px;
+            border-radius: 8px;
+            margin-top: 15px;
+            font-weight: bold;
             text-align: center;
             font-size: 16px;
-            padding: 10px;
-            background-color: #388E3C;
-            color: white;
-            border-radius: 6px;
-            margin-top: 10px;
-            font-weight: bold;
         }
+
         #historyLog {
             margin-top: 25px;
             padding: 15px;
@@ -150,9 +153,9 @@
     <div class="container">
         <h1>🎰 Aviator Predictor</h1>
 
-        <div id="clockDisplay">12:00</div>
+        <div id="clockDisplay">--:--:--</div>
         
-        <label for="roundInput" id="roundLabel">Weka Matokeo ya Mzunguko Uliopita (Multiplier):</label>
+        <label for="roundInput" id="roundLabel">1. Weka Matokeo ya Mzunguko Uliopita (Multiplier):</label>
         
         <div style="display: flex; align-items: center;">
             <input type="number" id="roundInput" step="0.01" placeholder="Mfano: 1.50 au 8.23" style="margin-right: 10px; margin-bottom: 0;">
@@ -163,9 +166,9 @@
         
 
         <div id="results" class="result-box">
+            <div id="riskAssessment">Inachambua hatari...</div>
             <div class="zone-status" id="zoneStatus"></div>
             <div class="prediction" id="predictionResult">Bonyeza "Tabiri" kuanza.</div>
-            <div class="cashout" id="cashOutIndicator">Cash Out Recommended: N/A</div>
             <div class="learning-status" id="learningStatus"></div>
         </div>
 
@@ -173,6 +176,10 @@
             <h3>Historia ya Raundi Zilizopita (Last Rounds):</h3>
             <div id="historyList"></div>
         </div>
+        
+        <p class="disclaimer" style="font-size: 12px; color: #9e9e9e; text-align: center; margin-top: 20px;">
+            Kanusho: Mfumo huu unajifunza kwa Historia yako uliyoweka. Hawezi kutabiri mchezo wa RNG.
+        </p>
 
     </div>
 
@@ -183,9 +190,7 @@
         let lastPredicted = null; 
         let isPredictionMode = true; // State: true = Predict, false = Learn/Log
 
-        const ROUND_DURATION_SECONDS = 720; // 12 minutes
-        let timeRemaining = ROUND_DURATION_SECONDS;
-        let clockInterval = null;
+        const CYCLE_SECONDS = 720; // 12 minutes * 60 seconds
         let history = JSON.parse(localStorage.getItem('aviator_history') || '[]');
         
         const MIC_BUTTON_DEFAULT_COLOR = '#2196F3'; 
@@ -198,9 +203,9 @@
         const clockDisplay = document.getElementById('clockDisplay');
         const predictionResultEl = document.getElementById('predictionResult');
         const zoneStatusEl = document.getElementById('zoneStatus');
-        const cashOutIndicatorEl = document.getElementById('cashOutIndicator');
         const learningStatusEl = document.getElementById('learningStatus');
         const historyListEl = document.getElementById('historyList');
+        const riskAssessmentEl = document.getElementById('riskAssessment');
 
 
         // --- UTILITY FUNCTIONS ---
@@ -221,17 +226,38 @@
             if (multiplier >= 2.00) return 'green';
             return 'red';
         }
-
-        function formatTime(seconds) {
-            const minutes = Math.floor(seconds / 60);
-            const remainingSeconds = seconds % 60;
-            return `${minutes.toString().padStart(2, '0')}:${remainingSeconds.toString().padStart(2, '0')}`;
+        
+        // --- NEW TIME LOGIC ---
+        function formatTime(date) {
+            return date.toTimeString().split(' ')[0]; // HH:MM:SS
         }
+
+        function getCurrentCycleSeconds() {
+            const now = new Date();
+            const totalSecondsOfDay = now.getHours() * 3600 + now.getMinutes() * 60 + now.getSeconds();
+            return totalSecondsOfDay % CYCLE_SECONDS; 
+        }
+
+        function getCycleTimeDisplay(cycleSeconds) {
+            const minutes = Math.floor(cycleSeconds / 60);
+            const seconds = cycleSeconds % 60;
+            return `Cycle: ${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+        }
+        
+        function updateClock() {
+            const now = new Date();
+            clockDisplay.textContent = formatTime(now);
+            
+            // Simulates round cycle by tracking time modulo 12 minutes
+            assessRiskByTime(getCurrentCycleSeconds()); 
+        }
+        // --- END NEW TIME LOGIC ---
+
 
         function updateHistory(newRound) {
             history.unshift(newRound); // Add to the start
-            if (history.length > 10) {
-                history.pop(); // Keep only the last 10
+            if (history.length > 50) { // Store more for better learning
+                history.pop(); 
             }
             localStorage.setItem('aviator_history', JSON.stringify(history));
             renderHistory();
@@ -239,10 +265,58 @@
 
         function renderHistory() {
             historyListEl.innerHTML = history.map(item => {
+                const zoneClass = getZoneClass(parseFloat(item.actual));
                 return `<div class="history-item">
-                    [${item.time}] L: ${item.lastRound}x, P: ${item.predicted}x, A: <span style="color:#4CAF50;">${item.actual}x</span> (${item.zone})
+                    [${item.time} / ${item.cycleTime}] L: ${item.lastRound}x, P: ${item.predicted}x, A: <span class="${zoneClass}">${item.actual}x (${item.zone})</span>
                 </div>`;
             }).join('');
+        }
+
+        // --- NEW RISK ASSESSMENT FUNCTION ---
+        function assessRiskByTime(currentCycleSecond) {
+            // Window of +/- 60 seconds (1 minute total)
+            const windowSize = 60; 
+            let redCount = 0;
+            let orangeCount = 0;
+            let totalCount = 0;
+
+            for (const item of history) {
+                // Calculate difference in seconds, wrapping around the 720-second cycle
+                const itemCycleSecond = parseInt(item.cycleSecond);
+                let diff = Math.abs(currentCycleSecond - itemCycleSecond);
+                
+                // Handle wrap-around (e.g., 710s and 10s are close)
+                if (diff > CYCLE_SECONDS / 2) {
+                    diff = CYCLE_SECONDS - diff;
+                }
+
+                if (diff <= windowSize) {
+                    totalCount++;
+                    if (item.zone.includes('Red')) redCount++;
+                    if (item.zone.includes('Orange')) orangeCount++;
+                }
+            }
+            
+            let message = '';
+            
+            if (totalCount === 0) {
+                message = `Chukua tahadhari: Historia bado haitoshi katika muda huu (${getCycleTimeDisplay(currentCycleSecond)}).`;
+            } else {
+                const redPercent = (redCount / totalCount) * 100;
+                const orangePercent = (orangeCount / totalCount) * 100;
+
+                if (redPercent > 60) {
+                    message = `🚨 HATARI KUBWA! ${redPercent.toFixed(0)}% ya raundi zilizopita katika muda huu zimefungwa chini ya 2.00x.`;
+                    riskAssessmentEl.style.backgroundColor = '#E57373';
+                } else if (orangePercent > 10) {
+                    message = `💰 JACKPOT INAKUJA? ${orangePercent.toFixed(0)}% ya raundi zimefika 10.00x+ katika muda huu.`;
+                    riskAssessmentEl.style.backgroundColor = '#4CAF50';
+                } else {
+                    message = `🟢 HALI YA KAWAIDA. Hatari ni ndogo kwa sasa.`;
+                    riskAssessmentEl.style.backgroundColor = '#333';
+                }
+            }
+            riskAssessmentEl.textContent = message;
         }
 
         // --- GAME LOGIC ---
@@ -258,18 +332,6 @@
                 prediction = (Math.random() * 0.5 * errorFactor + 1.0); 
             }
             return prediction.toFixed(2);
-        }
-
-        // --- CLOCK LOGIC ---
-        function startClock() {
-            if (clockInterval) clearInterval(clockInterval);
-            clockInterval = setInterval(() => {
-                timeRemaining--;
-                if (timeRemaining < 0) {
-                    timeRemaining = ROUND_DURATION_SECONDS; // Reset to 12 minutes
-                }
-                clockDisplay.textContent = formatTime(timeRemaining);
-            }, 1000);
         }
 
         // --- VOICE INPUT LOGIC ---
@@ -331,7 +393,9 @@
                 const currentZone = getZone(predictedMultiplier);
                 
                 lastPredicted = {
-                    time: formatTime(timeRemaining), 
+                    time: formatTime(new Date()),
+                    cycleTime: getCycleTimeDisplay(getCurrentCycleSeconds()),
+                    cycleSecond: getCurrentCycleSeconds(),
                     lastRound: lastRound.toFixed(2),
                     predicted: predicted,
                 };
@@ -346,8 +410,7 @@
                 // Onyesha Matokeo
                 predictionResultEl.innerHTML = `NEXT PREDICTION: <span style="color:#FFC107;">${predicted}x</span>`;
                 zoneStatusEl.className = `zone-status ${getZoneClass(predictedMultiplier)}`;
-                zoneStatusEl.textContent = `${currentZone} (${formatTime(ROUND_DURATION_SECONDS - timeRemaining)} elapsed)`;
-                cashOutIndicatorEl.textContent = `Cash Out Recommended: ${predictedMultiplier >= 2.00 ? '2.00x' : '1.50x'}`;
+                zoneStatusEl.textContent = `Utabiri Huu ni: ${currentZone}`;
 
 
             } else {
@@ -383,15 +446,15 @@
                 updateLearningStatus();
                 predictionResultEl.textContent = "Kujifunza Kumekamilika. Tayari kwa Utabiri Mpya.";
                 zoneStatusEl.textContent = 'Learning Logged.';
-                cashOutIndicatorEl.textContent = `Cash Out Recommended: N/A`;
 
             }
         });
 
         // Initialization
-        startClock();
+        setInterval(updateClock, 1000); // Update clock every second
         updateLearningStatus();
         renderHistory();
+        assessRiskByTime(getCurrentCycleSeconds()); // Initial risk check
     </script>
 </body>
 </html>
