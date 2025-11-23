@@ -201,9 +201,9 @@
     <script>
         // --- GLOBAL VARIABLES ---
         const CYCLE_SECONDS = 720; // 12 minutes * 60 seconds
-        const ERROR_THRESHOLD = 2.0; 
+        const ERROR_THRESHOLD = 5.0; 
         const MIN_ATTEMPTS_FOR_RESET = 30; 
-        const MISTAKE_PERCENTAGE_RESET = 0.35; 
+        const MISTAKE_PERCENTAGE_RESET = 0.50; 
         
         let attempts = parseInt(localStorage.getItem('aviator_attempts') || 0);
         let mistakes = parseInt(localStorage.getItem('aviator_mistakes') || 0);
@@ -325,8 +325,9 @@
 
         function checkHistoryForAlerts() {
             if (history.length < 2) {
+                // Ikiwa kuna raundi chache, tunafuta tu classes zozote za alert.
                 alertBoxEl.className = '';
-                alertBoxEl.textContent = 'Mfumo Tayari Kujifunza Raundi...';
+                // Hatuweki ujumbe wa default hapa ili kuzuia kubadilika kila sekunde.
                 return;
             }
 
@@ -353,8 +354,8 @@
                 return;
             }
             
+            // Ikiwa hakuna alert, ondoa tu classes, acha ujumbe wa Kiswahili ulivyowekwa mwanzo.
             alertBoxEl.className = '';
-            alertBoxEl.textContent = 'Mfumo Tayari Kujifunza Raundi...';
         }
 
 
@@ -435,8 +436,10 @@
                 if (numberMatch) {
                     roundInput.value = parseFloat(numberMatch[0]).toFixed(2);
                     alertBoxEl.textContent = "Sauti Imepokelewa. Bonyeza kitufe Kuingiza.";
+                    alertBoxEl.className = 'green-alert';
                 } else {
                      alertBoxEl.textContent = "Sikuelewi. Jaribu tena au andika.";
+                     alertBoxEl.className = 'mixed-alert';
                 }
             };
             recognition.onspeechend = () => {
@@ -466,11 +469,10 @@
             // Data ambayo ilitolewa na Prediction sasa inatolewa kwenye Matokeo Halisi ya zamani
             const lastRoundEntry = history.length > 0 ? history[0].actual : '1.00'; 
             
-            // 1. Fanya Logic ya Kujifunza (Hata bila utabiri wa namba, tunaendelea kuhesabu makosa kwa mabadiliko makubwa)
+            // 1. Fanya Logic ya Kujifunza 
             attempts++;
             
             // Makosa yanahesabiwa tu ikiwa kuna mabadiliko makubwa sana kutoka kwenye raundi iliyopita.
-            // (Ingawa utabiri umeondolewa, tunatumia tofauti na raundi iliyopita ili kudumisha error counter kwa auto-reset)
             if (Math.abs(actual - parseFloat(lastRoundEntry)) > ERROR_THRESHOLD) { 
                 mistakes++;
             }
@@ -500,12 +502,8 @@
                 const deletedEntry = history.shift(); // Remove the first item
                 localStorage.setItem('aviator_history', JSON.stringify(history));
 
-                // Rudi nyuma kwa attempts na mistakes (optional, for safety)
+                // Rudi nyuma kwa attempts (na mistakes)
                 attempts = Math.max(0, attempts - 1);
-                
-                // Tunaweza kufanya makosa yasiweze kurudi nyuma kirahisi bila kujua kama ilikuwa kosa
-                // mistakes = Math.max(0, mistakes - 1); 
-
                 localStorage.setItem('aviator_attempts', attempts);
                 
                 updateLearningStatus();
@@ -522,6 +520,8 @@
         setInterval(updateClock, 1000); 
         updateLearningStatus();
         renderHistory();
+        // Hakikisha ujumbe wa kwanza unaonekana kwa Kiswahili
+        alertBoxEl.textContent = 'Mfumo Tayari Kujifunza Raundi...';
     </script>
 </body>
 </html>
