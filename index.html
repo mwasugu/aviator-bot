@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Aviator Data Analyser | Cyber Blue V7</title>
+    <title>Aviator Data Analyser | Cyber Blue V8</title>
     <style>
         /* --- ANIMATION CSS --- */
         @keyframes explosion {
@@ -113,12 +113,13 @@
         }
         #micBtn:hover { background-color: #66FF66; }
 
-        /* Vifungo vya Control Group */
+        /* Vifungo vya Control Group Sasa viko juu ya History */
         .control-group {
             display: flex; 
             justify-content: space-between; 
             gap: 10px; 
-            margin-top: 10px;
+            margin-top: 15px; /* Nafasi kati ya Results na Vifungo */
+            margin-bottom: 10px;
         }
         #deleteLastRoundBtn {
             background-color: #FF8C00; 
@@ -168,6 +169,24 @@
         .zone-status.orange { color: #FFD700; }
 
         /* ALERT AND RISK ASSESSMENT SECTION */
+        #stabilityStatus { /* New element for Loading/Stable */
+            padding: 12px;
+            border-radius: 8px;
+            margin-top: 15px;
+            font-weight: bold;
+            text-align: center;
+            font-size: 16px;
+        }
+        #stabilityStatus.loading { 
+            background-color: #FF8C00; /* Orange */
+            color: #0A0A0A;
+        }
+        #stabilityStatus.stable {
+            background-color: #32CD32; /* Lime Green */
+            color: #0A0A0A;
+        }
+
+
         #riskAssessment {
             background-color: #333333;
             color: #fff;
@@ -193,7 +212,7 @@
         #alertBox.jackpot-fast-alert { background-color: #4B0082; color: #FFD700; border: 2px solid #FFD700; }
         
         #historyLog {
-            margin-top: 25px;
+            margin-top: 10px; /* Nafasi imepunguzwa */
             padding: 15px;
             border-radius: 15px;
             background-color: #121212;
@@ -239,17 +258,18 @@
         
         <button id="mainButton">INGIZA MATOKEO NA JIFUNZE</button>
         
-        <div class="control-group">
-            <button id="deleteLastRoundBtn">FUTA ROUND YA MWISHO</button>
-            <button id="resetAllDataBtn">FUTA DATA YOTE (RESET)</button>
-        </div>
-        
-
         <div id="results" class="result-box">
+            <div id="stabilityStatus"></div> 
+
             <div id="alertBox">Mfumo Tayari Kujifunza Raundi...</div>
 
             <div id="riskAssessment">Inachambua hatari kwa muda huu...</div>
             <div class="learning-status" id="learningStatus"></div>
+        </div>
+        
+        <div class="control-group">
+            <button id="deleteLastRoundBtn">FUTA ROUND YA MWISHO</button>
+            <button id="resetAllDataBtn">FUTA DATA YOTE (RESET)</button>
         </div>
 
         <div id="historyLog">
@@ -269,6 +289,7 @@
         const ERROR_THRESHOLD = 5.0; 
         const MIN_ATTEMPTS_FOR_RESET = 30; 
         const MISTAKE_PERCENTAGE_RESET = 0.50; 
+        const MIN_ATTEMPTS_FOR_STABLE = 10; // Raundi 10 zinahitajika kwa Stable
         
         // Jackpot Tiers 
         const JACKPOT_TIERS = [
@@ -295,7 +316,8 @@
         const alertBoxEl = document.getElementById('alertBox');
         const deleteLastRoundBtn = document.getElementById('deleteLastRoundBtn');
         const resetAllDataBtn = document.getElementById('resetAllDataBtn'); 
-        const explosionContainer = document.getElementById('explosionContainer'); // Element Mpya
+        const explosionContainer = document.getElementById('explosionContainer'); 
+        const stabilityStatusEl = document.getElementById('stabilityStatus'); // Element Mpya
 
         // --- UTILITY FUNCTIONS ---
         function getZone(multiplier) {
@@ -368,6 +390,15 @@
                 `Tasks Logged: ${attempts} | Errors Recorded: ${mistakes} (${errorPercent}%)`;
             
             checkForAutoReset(); 
+            
+            // LOGIKI YA STABILITY STATUS HAPA
+            if (attempts < MIN_ATTEMPTS_FOR_STABLE) {
+                stabilityStatusEl.className = 'loading';
+                stabilityStatusEl.textContent = `⏳ INAJIFUNZA: ${attempts}/${MIN_ATTEMPTS_FOR_STABLE} Raundi Zinaingizwa...`;
+            } else {
+                stabilityStatusEl.className = 'stable';
+                stabilityStatusEl.textContent = `✅ MFUMO UKO STABLE! Data Za Kutosha Zimekusanywa.`;
+            }
         }
 
         function updateHistory(newRound) {
@@ -558,7 +589,7 @@
             micBtn.style.display = 'none';
         }
 
-        // --- MAIN BUTTON HANDLER (W/ EXPLOSION LOGIC) ---
+        // --- MAIN BUTTON HANDLER ---
         mainButton.addEventListener('click', () => {
             const actual = parseFloat(roundInput.value);
 
@@ -571,7 +602,6 @@
             // --- LOGIKI YA MLIPUKO ---
             if (actual >= 10.00) {
                 explosionContainer.classList.add('jackpot-explosion');
-                // Ondoa darasa baada ya sekunde 1.5 ili animation ifanye kazi tena
                 setTimeout(() => {
                     explosionContainer.classList.remove('jackpot-explosion');
                 }, 1500);
