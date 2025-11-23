@@ -3,11 +3,42 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Aviator Data Analyser | Cyber Blue Edition</title>
+    <title>Aviator Data Analyser | Cyber Blue V7</title>
     <style>
+        /* --- ANIMATION CSS --- */
+        @keyframes explosion {
+            0% {
+                transform: scale(0.1);
+                opacity: 0;
+            }
+            30% {
+                transform: scale(1.5);
+                opacity: 1;
+                box-shadow: 0 0 100px 50px rgba(255, 215, 0, 0.8), 0 0 200px 100px rgba(255, 69, 0, 0.7);
+            }
+            100% {
+                transform: scale(3.5);
+                opacity: 0;
+            }
+        }
+        .jackpot-explosion {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) scale(0);
+            width: 200px;
+            height: 200px;
+            border-radius: 50%;
+            background-color: transparent;
+            pointer-events: none;
+            z-index: 9999;
+            animation: explosion 1.5s ease-out forwards;
+        }
+
+
         /* CSS YA UREMBO MPYA (Cyber Blue/Dark Theme) */
         body {
-            font-family: 'Roboto Mono', monospace; /* Font ya kiufundi */
+            font-family: 'Roboto Mono', monospace; 
             background-color: #0A0A0A;
             color: #E0E0E0;
             margin: 0;
@@ -20,13 +51,13 @@
             background-color: #1A1A1A;
             padding: 30px;
             border-radius: 25px;
-            box-shadow: 0 0 40px rgba(0, 191, 255, 0.4); /* Neon Blue Glow */
+            box-shadow: 0 0 40px rgba(0, 191, 255, 0.4); 
             width: 100%;
             max-width: 480px;
-            border: 2px solid #00BFFF; /* Electric Blue Border */
+            border: 2px solid #00BFFF; 
         }
         h1 {
-            color: #00BFFF; /* Electric Blue */
+            color: #00BFFF; 
             text-align: center;
             margin-bottom: 25px;
             font-size: 36px;
@@ -45,7 +76,7 @@
             margin-bottom: 20px;
             border-radius: 12px;
             border: 2px solid #00BFFF;
-            background-color: #001A33; /* Darker Blue Background */
+            background-color: #001A33; 
             color: #FFFFFF;
             font-size: 22px;
             box-shadow: inset 0 0 5px #00BFFF50;
@@ -67,7 +98,7 @@
 
         /* BUTTON STYLES */
         #mainButton {
-            background-color: #00BFFF; /* Main Log Button Electric Blue */
+            background-color: #00BFFF; 
             color: #001A33;
             box-shadow: 0 5px 20px rgba(0, 191, 255, 0.6);
         }
@@ -76,7 +107,7 @@
         #micBtn {
             width: auto; 
             padding: 10px 15px; 
-            background-color: #32CD32; /* Lime Green for Mic */
+            background-color: #32CD32; 
             color: #0A0A0A;
             box-shadow: 0 3px 10px rgba(50, 205, 50, 0.4);
         }
@@ -90,16 +121,15 @@
             margin-top: 10px;
         }
         #deleteLastRoundBtn {
-            background-color: #FF8C00; /* Dark Orange */
+            background-color: #FF8C00; 
             font-size: 16px;
             padding: 12px;
             flex-grow: 1;
         }
         #deleteLastRoundBtn:hover { background-color: #FFA500; }
         
-        /* Kitufe Kipya cha RESET YOTE */
         #resetAllDataBtn {
-            background-color: #FF4500; /* OrangeRed for Reset All */
+            background-color: #FF4500; 
             color: #FFFFFF;
             font-size: 16px;
             padding: 12px;
@@ -114,7 +144,7 @@
             text-align: center;
             font-size: 40px;
             font-weight: bold;
-            color: #FF66B2; /* Pink/Magenta */
+            color: #FF66B2; 
             margin-bottom: 25px;
             padding: 10px 0;
             border-bottom: 2px dashed #333;
@@ -155,11 +185,12 @@
             text-align: center;
             font-weight: bold;
             font-size: 18px;
-            transition: background-color 0.3s, color 0.3s; /* Utulivu */
+            transition: background-color 0.3s, color 0.3s; 
         }
         #alertBox.red-alert { background-color: #330000; color: #FF6666; border: 2px solid #FF0000; }
         #alertBox.green-alert { background-color: #003300; color: #66FF66; border: 2px solid #00FF00; }
         #alertBox.mixed-alert { background-color: #333300; color: #FFFF66; border: 2px solid #FFFF00; }
+        #alertBox.jackpot-fast-alert { background-color: #4B0082; color: #FFD700; border: 2px solid #FFD700; }
         
         #historyLog {
             margin-top: 25px;
@@ -192,6 +223,8 @@
     </style>
 </head>
 <body>
+    <div id="explosionContainer"></div>
+    
     <div class="container">
         <h1>🚀 AVIATOR ANALYSER</h1>
 
@@ -249,7 +282,7 @@
         let mistakes = parseInt(localStorage.getItem('aviator_mistakes') || 0);
         let history = JSON.parse(localStorage.getItem('aviator_history') || '[]');
         
-        const MIC_BUTTON_DEFAULT_COLOR = '#32CD32'; // Lime Green
+        const MIC_BUTTON_DEFAULT_COLOR = '#32CD32'; 
         const MIC_BUTTON_RECORDING_COLOR = '#FF0000'; 
         
         const roundInput = document.getElementById('roundInput'); 
@@ -261,8 +294,8 @@
         const riskAssessmentEl = document.getElementById('riskAssessment');
         const alertBoxEl = document.getElementById('alertBox');
         const deleteLastRoundBtn = document.getElementById('deleteLastRoundBtn');
-        const resetAllDataBtn = document.getElementById('resetAllDataBtn'); // Kitufe Kipya
-
+        const resetAllDataBtn = document.getElementById('resetAllDataBtn'); 
+        const explosionContainer = document.getElementById('explosionContainer'); // Element Mpya
 
         // --- UTILITY FUNCTIONS ---
         function getZone(multiplier) {
@@ -361,7 +394,7 @@
                  resetAllDataBtn.style.display = 'block';
             } else {
                  deleteLastRoundBtn.style.display = 'none';
-                 resetAllDataBtn.style.display = 'block'; // Acha reset ibaki wazi
+                 resetAllDataBtn.style.display = 'block';
             }
         }
 
@@ -380,7 +413,15 @@
                 return;
             }
 
+            const lastRoundActual = parseFloat(history[0].actual);
             const lastTwoZones = history.slice(0, 2).map(item => getZoneKey(parseFloat(item.actual)));
+            
+            // Alert ya Jackpot ya Haraka (Round ya mwisho ilikuwa Jackpot)
+            if (lastRoundActual >= 10.00) {
+                alertBoxEl.className = 'jackpot-fast-alert';
+                alertBoxEl.textContent = `👑 JACKPOT IMEPIGWA: ${lastRoundActual.toFixed(2)}x! Soko Lipo HOT!`;
+                return;
+            }
 
             // Green Streak Alert
             if (lastTwoZones.every(zone => zone === 'Green')) {
@@ -406,7 +447,7 @@
             alertBoxEl.className = '';
         }
 
-        // Multi-Jackpot Analysis
+        // Multi-Jackpot Analysis 
         function assessRiskByTime(currentCycleSecond) {
             const windowSize = 60; 
             let redCount = 0;
@@ -449,7 +490,8 @@
                     const tierData = jackpotCounts[tier.threshold];
                     const tierPercent = (tierData.count / totalCount) * 100;
 
-                    if (tierPercent >= 5 && tierData.count >= 2) {
+                    // Imenekana Jackpot 1 au zaidi
+                    if (tierPercent >= 5 && tierData.count >= 1) { 
                         jackpotAlerts.push(`${tier.name} (${tier.threshold.toFixed(2)}x)`);
                         isJackpotTime = true;
                     }
@@ -463,7 +505,7 @@
                 // Panga Red/Normal Alert
                 else if (redPercent > 60) {
                     message = `🚨 HATARI KUBWA! ${redPercent.toFixed(0)}% ya raundi zimefungwa chini ya 2.00x.`;
-                    riskAssessmentEl.style.backgroundColor = '#FF4500'; /* OrangeRed */
+                    riskAssessmentEl.style.backgroundColor = '#FF4500'; 
                 } else {
                     message = `🟢 HALI YA KAWAIDA. Hatari ni ndogo kwa sasa.`;
                     riskAssessmentEl.style.backgroundColor = '#333'; 
@@ -472,7 +514,7 @@
             riskAssessmentEl.textContent = message;
         }
 
-        // --- VOICE INPUT LOGIC ---
+        // --- VOICE INPUT LOGIC (UNCHANGED) ---
         const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
 
         if (SpeechRecognition) {
@@ -516,7 +558,7 @@
             micBtn.style.display = 'none';
         }
 
-        // --- MAIN BUTTON HANDLER ---
+        // --- MAIN BUTTON HANDLER (W/ EXPLOSION LOGIC) ---
         mainButton.addEventListener('click', () => {
             const actual = parseFloat(roundInput.value);
 
@@ -525,6 +567,16 @@
                 alertBoxEl.textContent = "Weka namba sahihi (Multipler > 1.0) Kuingiza Matokeo.";
                 return;
             }
+            
+            // --- LOGIKI YA MLIPUKO ---
+            if (actual >= 10.00) {
+                explosionContainer.classList.add('jackpot-explosion');
+                // Ondoa darasa baada ya sekunde 1.5 ili animation ifanye kazi tena
+                setTimeout(() => {
+                    explosionContainer.classList.remove('jackpot-explosion');
+                }, 1500);
+            }
+            // --------------------------
 
             const lastRoundEntry = history.length > 0 ? history[0].actual : '1.00'; 
             
@@ -551,7 +603,7 @@
             alertBoxEl.textContent = "Kujifunza Kumekamilika! Endelea kuingiza raundi...";
         });
 
-        // Kazi ya Kufuta Raundi ya Mwisho (Kurekebisha Kosa la Data)
+        // Kazi ya Kufuta Raundi ya Mwisho 
         deleteLastRoundBtn.addEventListener('click', () => {
             if (history.length > 0) {
                 const deletedEntry = history.shift(); 
@@ -570,7 +622,7 @@
             }
         });
 
-        // Kitufe Kipya: Futa Data Yote
+        // Kitufe cha Futa Data Yote
         resetAllDataBtn.addEventListener('click', resetSystem);
 
         // Initialization
