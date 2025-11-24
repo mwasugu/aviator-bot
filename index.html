@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Aviator Prediction Simulator (Live Time Auto-Reset)</title>
+    <title>Aviator Learning Log & Data Control with Risk Assessment</title>
     <style>
         /* CSS STYLES (UNCHANGED) */
         body {
@@ -51,70 +51,61 @@
             padding: 14px;
             border: none;
             border-radius: 8px;
-            font-size: 18px;
+            font-size: 16px;
             font-weight: bold;
             cursor: pointer;
             transition: background-color 0.3s, transform 0.1s;
+            margin-bottom: 10px;
         }
         button:active {
             transform: scale(0.98);
         }
 
-        /* MAIN BUTTON STYLES (Dynamic) */
-        #mainButton {
-            background-color: #4CAF50; /* Green for Predict */
+        /* BUTTON STYLES */
+        #logButton {
+            background-color: #4CAF50;
             color: #1a1a1a;
-            margin-bottom: 15px;
-        }
-        #mainButton.learn-mode {
-            background-color: #FF9800; /* Orange for Learn */
-            color: #1a1a1a;
-        }
-        #mainButton:hover { background-color: #81C784; }
-        #mainButton.learn-mode:hover { background-color: #FFB74D; }
-        
-        /* VOICE INPUT & CLOCK STYLES */
-        #micBtn {
-            width: auto; 
-            padding: 10px 15px; 
-            background-color: #2196F3;
-            color: white;
+            font-size: 18px;
             margin-bottom: 20px;
         }
+        #logButton:hover { background-color: #81C784; }
+
+        #undoButton {
+            background-color: #FF9800;
+            color: #1a1a1a;
+        }
+        #undoButton:hover { background-color: #FFB74D; }
+
+        #resetButton {
+            background-color: #E57373;
+            color: white;
+        }
+        #resetButton:hover { background-color: #EF9A9A; }
+        
         #clockDisplay {
             text-align: center;
             font-size: 36px;
             font-weight: bold;
-            color: #E57373; /* Red for timer */
+            color: #E57373; 
             margin-bottom: 20px;
             padding: 10px 0;
             border-bottom: 2px solid #333;
         }
+        
         .result-box {
-            margin-top: 20px;
+            margin-top: 10px;
             padding: 15px;
             border-radius: 10px;
             background-color: #2c2c2c;
             border-left: 5px solid #4CAF50;
         }
-        .prediction {
-            font-size: 28px;
+        .message {
+            font-size: 18px;
             font-weight: bold;
             color: #FFC107;
             margin: 10px 0;
             text-align: center;
         }
-        .zone-status {
-            font-size: 18px;
-            font-weight: bold;
-            text-align: center;
-            padding: 5px 0;
-        }
-        .zone-status.red { color: #E57373; }
-        .zone-status.green { color: #8BC34A; }
-        .zone-status.orange { color: #FF9800; }
-        .correct { color: #8BC34A; }
-        .incorrect { color: #E57373; }
 
         /* RISK ASSESSMENT SECTION */
         #riskAssessment {
@@ -122,19 +113,11 @@
             color: #fff;
             padding: 10px;
             border-radius: 8px;
-            margin-top: 15px;
+            margin-top: 5px;
+            margin-bottom: 15px;
             font-weight: bold;
             text-align: center;
             font-size: 16px;
-        }
-        #resetWarning {
-            background-color: #FF0000;
-            color: white;
-            padding: 10px;
-            border-radius: 8px;
-            margin-top: 10px;
-            text-align: center;
-            display: none; /* Hide by default */
         }
 
         #historyLog {
@@ -142,7 +125,7 @@
             padding: 15px;
             border-radius: 10px;
             background-color: #1f1f1f;
-            max-height: 150px;
+            max-height: 250px;
             overflow-y: auto;
             border: 1px solid #333;
         }
@@ -158,31 +141,31 @@
             padding: 4px 0;
             border-bottom: 1px dotted #333;
         }
+        .zone-status.red { color: #E57373; }
+        .zone-status.green { color: #8BC34A; }
+        .zone-status.orange { color: #FF9800; }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>🎰 Aviator Predictor</h1>
+        <h1>📊 Aviator Learning Log</h1>
 
         <div id="clockDisplay">--:--:--</div>
         
-        <label for="roundInput" id="roundLabel">1. Enter Previous Round Multiplier:</label>
+        <label for="roundInput" id="roundLabel">Enter Round Multiplier (Actual Result):</label>
         
-        <div style="display: flex; align-items: center;">
-            <input type="number" id="roundInput" step="0.01" placeholder="Example: 1.50 or 8.23" style="margin-right: 10px; margin-bottom: 0;">
-            <button id="micBtn" style="width: auto; padding: 10px 15px;">🎤</button>
-        </div>
+        <input type="number" id="roundInput" step="0.01" placeholder="Example: 1.50 or 8.23">
         
-        <button id="mainButton">1. Predict Next Round</button>
-        
-        <div id="resetWarning">
-            🚨 Learning Failed: System Reset Initiated!
+        <button id="logButton">LOG ROUND RESULT</button>
+
+        <div id="controlButtons" style="display: flex; gap: 10px;">
+            <button id="undoButton" style="width: 50%;">UNDO Last Round</button>
+            <button id="resetButton" style="width: 50%;">RESET All Data</button>
         </div>
 
         <div id="results" class="result-box">
             <div id="riskAssessment">Analyzing Risk...</div>
-            <div class="zone-status" id="zoneStatus"></div>
-            <div class="prediction" id="predictionResult">Press "Predict" to start.</div>
+            <div class="message" id="systemMessage">Enter the first round result.</div>
             <div class="learning-status" id="learningStatus"></div>
         </div>
 
@@ -192,71 +175,30 @@
         </div>
         
         <p class="disclaimer" style="font-size: 12px; color: #9e9e9e; text-align: center; margin-top: 20px;">
-            Disclaimer: This system learns from your input history. It cannot predict the outcomes of an RNG game.
+            This tool records your history for analysis. Risk is based only on your logged data.
         </p>
 
     </div>
 
     <script>
         // --- GLOBAL VARIABLES ---
-        const CYCLE_SECONDS = 720; // 12 minutes * 60 seconds (Confirmed Duration)
-        const ERROR_THRESHOLD = 0.75; // Strict Error Threshold for Learning
-        const MIN_ATTEMPTS_FOR_RESET = 30; 
-        const MISTAKE_PERCENTAGE_RESET = 0.40; 
-        const TIME_WINDOW_FOR_LEARNING = 90; // 90 seconds (±45s) window for historical analysis
+        const CYCLE_SECONDS = 720; // 12 minutes * 60 seconds
+        const TIME_WINDOW_FOR_LEARNING = 90; // 90 seconds (±45s) window for risk analysis
         
-        let attempts = parseInt(localStorage.getItem('aviator_attempts') || 0);
-        let mistakes = parseInt(localStorage.getItem('aviator_mistakes') || 0);
-        let lastPredicted = null; 
-        let isPredictionMode = true; 
+        let totalRounds = parseInt(localStorage.getItem('aviator_totalRounds') || 0);
         let history = JSON.parse(localStorage.getItem('aviator_history') || '[]');
         
-        const MIC_BUTTON_DEFAULT_COLOR = '#2196F3'; 
-        const MIC_BUTTON_RECORDING_COLOR = '#FF0000'; 
-        
         const roundInput = document.getElementById('roundInput'); 
-        const roundLabel = document.getElementById('roundLabel'); 
-        const mainButton = document.getElementById('mainButton'); 
-        const micBtn = document.getElementById('micBtn');
+        const logButton = document.getElementById('logButton'); 
+        const undoButton = document.getElementById('undoButton');
+        const resetButton = document.getElementById('resetButton');
         const clockDisplay = document.getElementById('clockDisplay');
-        const predictionResultEl = document.getElementById('predictionResult');
-        const zoneStatusEl = document.getElementById('zoneStatus');
+        const systemMessageEl = document.getElementById('systemMessage');
         const learningStatusEl = document.getElementById('learningStatus');
         const historyListEl = document.getElementById('historyList');
-        const riskAssessmentEl = document.getElementById('riskAssessment');
-        const resetWarningEl = document.getElementById('resetWarning');
+        const riskAssessmentEl = document.getElementById('riskAssessment'); // New Element
 
         // --- CORE FUNCTIONS ---
-
-        function resetSystem() {
-            localStorage.removeItem('aviator_attempts');
-            localStorage.removeItem('aviator_mistakes');
-            localStorage.removeItem('aviator_history');
-            attempts = 0;
-            mistakes = 0;
-            history = [];
-            
-            updateLearningStatus();
-            renderHistory();
-            resetWarningEl.style.display = 'block';
-            setTimeout(() => { resetWarningEl.style.display = 'none'; }, 5000); 
-        }
-
-        function checkForAutoReset() {
-            if (attempts > MIN_ATTEMPTS_FOR_RESET) {
-                if (mistakes / attempts > MISTAKE_PERCENTAGE_RESET) {
-                    resetSystem();
-                }
-            }
-        }
-
-        function updateLearningStatus() {
-            const errorPercent = attempts > 0 ? ((mistakes / attempts) * 100).toFixed(1) : 0;
-            learningStatusEl.textContent = 
-                `Forecast Tasks: ${attempts} | Errors: ${mistakes} (${errorPercent}%) | Error Threshold: ${ERROR_THRESHOLD}x`;
-            
-            checkForAutoReset(); 
-        }
 
         function getZone(multiplier) {
             if (multiplier >= 10.00) return 'Orange Zone (Jackpot)';
@@ -291,38 +233,40 @@
             const now = new Date();
             const cycleSeconds = getCurrentCycleSeconds();
             clockDisplay.textContent = `${formatTime(now)} | Cycle: ${getCycleTimeDisplay(cycleSeconds)}`; 
-            assessRiskByTime(cycleSeconds); 
+            assessRiskByTime(cycleSeconds); // Call Risk Assessment every second
         }
 
-        function updateHistory(newRound) {
-            history.unshift(newRound);
-            if (history.length > 50) { 
-                history.pop(); 
-            }
-            localStorage.setItem('aviator_history', JSON.stringify(history));
-            renderHistory();
+        function updateLearningStatus() {
+            learningStatusEl.textContent = `Total Rounds Logged: ${totalRounds}`;
+            undoButton.disabled = history.length === 0;
         }
 
         function renderHistory() {
             historyListEl.innerHTML = history.map(item => {
                 const zoneClass = getZoneClass(parseFloat(item.actual));
-                const isCorrect = Math.abs(parseFloat(item.predicted) - parseFloat(item.actual)) <= ERROR_THRESHOLD;
-                const correctClass = isCorrect ? 'correct' : 'incorrect';
-                const correctMark = isCorrect ? '✅' : '❌'; 
                 
                 return `<div class="history-item">
-                    [${item.time} / ${item.cycleTime}] Last: ${item.lastRound}x, Pred: ${item.predicted}x, Act: <span class="${zoneClass}">${item.actual}x</span> <span class="${correctClass}">(${correctMark})</span>
+                    [${item.time} / ${item.cycleTime}] Round #${item.roundNum}: <span class="${zoneClass}">${item.actual}x (${item.zone})</span>
                 </div>`;
             }).join('');
         }
 
+        function saveState() {
+            localStorage.setItem('aviator_totalRounds', totalRounds);
+            localStorage.setItem('aviator_history', JSON.stringify(history));
+            updateLearningStatus();
+            renderHistory();
+        }
+
+        // --- RISK ASSESSMENT LOGIC (RESTORED) ---
         function assessRiskByTime(currentCycleSecond) {
             const windowSize = TIME_WINDOW_FOR_LEARNING; 
-            let redCount = 0;
-            let orangeCount = 0;
+            let redCount = 0; // Below 2.00x
+            let orangeCount = 0; // 10.00x+
             let totalCount = 0;
 
             for (const item of history) {
+                const actualMultiplier = parseFloat(item.actual);
                 const itemCycleSecond = parseInt(item.cycleSecond);
                 let diff = Math.abs(currentCycleSecond - itemCycleSecond);
                 
@@ -332,201 +276,93 @@
 
                 if (diff <= windowSize / 2) { 
                     totalCount++;
-                    if (item.zone.includes('Red')) redCount++;
-                    if (item.zone.includes('Orange')) orangeCount++;
+                    if (actualMultiplier < 2.00) redCount++; // Check for Red Zone
+                    if (actualMultiplier >= 10.00) orangeCount++; // Check for Orange Zone
                 }
             }
             
             let message = '';
             
             if (totalCount < 5) { 
-                message = `Caution: Insufficient historical data for this cycle time (${getCycleTimeDisplay(currentCycleSecond)}).`;
+                message = `Caution: Insufficient data (${totalCount}) for risk analysis at this cycle time.`;
                 riskAssessmentEl.style.backgroundColor = '#555';
             } else {
                 const redPercent = (redCount / totalCount) * 100;
                 const orangePercent = (orangeCount / totalCount) * 100;
 
                 if (redPercent > 60) {
-                    message = `🚨 HIGH RISK! ${redPercent.toFixed(0)}% of past rounds in this window crashed below 2.00x.`;
+                    message = `🚨 HIGH RISK! ${redPercent.toFixed(0)}% of rounds in this window crashed below 2.00x.`;
                     riskAssessmentEl.style.backgroundColor = '#E57373'; 
                 } else if (orangePercent > 10) {
-                    message = `💰 JACKPOT APPROACHING? ${orangePercent.toFixed(0)}% of past rounds reached 10.00x+ in this window.`;
+                    message = `💰 JACKPOT STATS! ${orangePercent.toFixed(0)}% of rounds hit 10.00x+ in this window.`;
                     riskAssessmentEl.style.backgroundColor = '#4CAF50'; 
                 } else {
-                    message = `🟢 NORMAL CONDITIONS. Risk is currently moderate.`;
+                    message = `🟢 NORMAL CONDITIONS. Risk is currently moderate (Avg: ${totalCount} rounds).`;
                     riskAssessmentEl.style.backgroundColor = '#333'; 
                 }
             }
             riskAssessmentEl.textContent = message;
         }
 
-        function getHistoricalCycleAverage(currentCycleSecond) {
-            let sum = 0;
-            let count = 0;
-            const windowSize = TIME_WINDOW_FOR_LEARNING;
+        // --- HANDLERS ---
 
-            for (const item of history) {
-                const itemCycleSecond = parseInt(item.cycleSecond);
-                let diff = Math.abs(currentCycleSecond - itemCycleSecond);
-                
-                // Accounting for wrap-around time
-                if (diff > CYCLE_SECONDS / 2) {
-                    diff = CYCLE_SECONDS - diff;
-                }
-
-                if (diff <= windowSize / 2) { 
-                    sum += parseFloat(item.actual);
-                    count++;
-                }
-            }
-            return count > 0 ? sum / count : null;
-        }
-
-        function predictMultiplier(last) {
-            const currentCycleSecond = getCurrentCycleSeconds();
-            const historicalAverage = getHistoricalCycleAverage(currentCycleSecond);
-            const errorFactor = 1 + (mistakes / 50); 
-            let basePrediction;
-
-            // Base prediction logic using the last multiplier
-            if (last < 1.3) {
-                basePrediction = (Math.random() * 2 + 1.2); 
-            } else if (last >= 1.3 && last < 3.0) {
-                basePrediction = (Math.random() * 1.5 + 1.0);
-            } else {
-                basePrediction = (Math.random() * 0.5 + 1.0); 
-            }
-            
-            let finalPrediction = basePrediction;
-            const WEIGHT_HISTORY = 0.4; // 40% weight to cycle history
-            const WEIGHT_BASE = 1.0 - WEIGHT_HISTORY;
-
-            // Apply Time-Based Learning (Weighted Average)
-            if (historicalAverage !== null) {
-                finalPrediction = (basePrediction * WEIGHT_BASE) + (historicalAverage * WEIGHT_HISTORY);
-            }
-
-            // Adjust prediction based on error factor
-            finalPrediction *= errorFactor;
-            
-            if (finalPrediction < 1.01) finalPrediction = 1.01;
-
-            return finalPrediction.toFixed(2);
-        }
-
-        // --- VOICE INPUT LOGIC ---
-        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-
-        if (SpeechRecognition) {
-            const recognition = new SpeechRecognition();
-            recognition.continuous = false;
-            recognition.lang = 'en-US'; // Changed to English for recognition
-            micBtn.style.backgroundColor = MIC_BUTTON_DEFAULT_COLOR;
-
-            micBtn.addEventListener('click', () => {
-                micBtn.style.backgroundColor = MIC_BUTTON_RECORDING_COLOR;
-                micBtn.textContent = '🔴 TALK';
-                recognition.start();
-            });
-
-            recognition.onresult = (event) => {
-                const result = event.results[0][0].transcript;
-                const numberMatch = result.match(/(\d+\.?\d*)/); 
-                micBtn.style.backgroundColor = MIC_BUTTON_DEFAULT_COLOR;
-                micBtn.textContent = '🎤';
-
-                if (numberMatch) {
-                    roundInput.value = parseFloat(numberMatch[0]).toFixed(2);
-                    predictionResultEl.textContent = "Voice Input Received. Press the button.";
-                } else {
-                     predictionResultEl.textContent = "Could not understand. Try again or type.";
-                }
-            };
-            recognition.onspeechend = () => {
-                micBtn.style.backgroundColor = MIC_BUTTON_DEFAULT_COLOR; 
-                micBtn.textContent = '🎤';
-                recognition.stop();
-            };
-            recognition.onerror = () => {
-                micBtn.style.backgroundColor = MIC_BUTTON_DEFAULT_COLOR; 
-                micBtn.textContent = '🎤';
-            };
-
-        } else {
-            micBtn.style.display = 'none';
-        }
-
-        // --- MAIN BUTTON HANDLER ---
-        mainButton.addEventListener('click', () => {
+        // 1. LOG ROUND
+        logButton.addEventListener('click', () => {
             const inputValue = parseFloat(roundInput.value);
 
-            if (isNaN(inputValue) || inputValue <= 0.99) {
-                predictionResultEl.textContent = "Enter a valid number (Multiplier > 1.0)";
+            if (isNaN(inputValue) || inputValue < 1.00) {
+                systemMessageEl.textContent = "Please enter a valid multiplier (>= 1.00).";
                 return;
             }
 
-            if (isPredictionMode) {
-                // STEP 1: Predict
-                const lastRound = inputValue;
-                const predicted = predictMultiplier(lastRound);
-                const predictedMultiplier = parseFloat(predicted);
-                const currentZone = getZone(predictedMultiplier);
+            totalRounds++;
+            const actual = inputValue.toFixed(2);
+            
+            const historyEntry = {
+                roundNum: totalRounds,
+                time: formatTime(new Date()),
+                cycleTime: getCycleTimeDisplay(getCurrentCycleSeconds()),
+                cycleSecond: getCurrentCycleSeconds(),
+                actual: actual,
+                zone: getZone(inputValue),
+            };
+            
+            history.unshift(historyEntry);
+            if (history.length > 50) { 
+                history.pop(); 
+            }
+
+            saveState();
+            systemMessageEl.textContent = `Round #${totalRounds} logged: ${actual}x.`;
+            roundInput.value = ''; 
+            roundInput.focus();
+        });
+
+        // 2. UNDO Last Round (Delete/Fix Last Entry)
+        undoButton.addEventListener('click', () => {
+            if (history.length > 0) {
+                const lastRound = history.shift(); 
+                totalRounds = lastRound.roundNum - 1; 
                 
-                lastPredicted = {
-                    time: formatTime(new Date()),
-                    cycleTime: getCycleTimeDisplay(getCurrentCycleSeconds()),
-                    cycleSecond: getCurrentCycleSeconds(),
-                    lastRound: lastRound.toFixed(2),
-                    predicted: predicted,
-                };
+                // Since totalRounds is only used for numbering, we simply ensure the number is correct.
                 
-                // Switch UI to 'Learn Mode'
-                roundLabel.textContent = "2. Enter ACTUAL Current Result (Learning):";
-                mainButton.textContent = "ENTER ACTUAL RESULT and Learn";
-                mainButton.classList.add('learn-mode');
-                roundInput.value = ''; 
-                isPredictionMode = false;
-
-                // Display Results
-                predictionResultEl.innerHTML = `NEXT PREDICTION: <span style="color:#FFC107;">${predicted}x</span>`;
-                zoneStatusEl.className = `zone-status ${getZoneClass(predictedMultiplier)}`;
-                zoneStatusEl.textContent = `Predicted Zone: ${currentZone}`;
-
-
+                saveState();
+                systemMessageEl.textContent = `Last Round (${lastRound.actual}x) UNDONE. Total: ${totalRounds}`;
+                roundInput.value = lastRound.actual; // Put value back for quick re-entry/correction
             } else {
-                // STEP 2: Enter Actual Result and Learn (Log Result)
-                const actual = inputValue;
-                const predicted = parseFloat(lastPredicted.predicted);
+                systemMessageEl.textContent = "No rounds to undo.";
+            }
+        });
 
-                // 1. Learning Logic
-                attempts++;
-                if (Math.abs(predicted - actual) > ERROR_THRESHOLD) { 
-                    mistakes++;
-                }
-
-                // 2. Save History
-                const historyEntry = {
-                    ...lastPredicted,
-                    actual: actual.toFixed(2),
-                    zone: getZone(actual),
-                };
-                updateHistory(historyEntry);
-
-                // 3. Save learning data
-                localStorage.setItem('aviator_attempts', attempts);
-                localStorage.setItem('aviator_mistakes', mistakes);
-
-                // 4. Switch UI back to 'Predict Mode'
-                roundLabel.textContent = "1. Enter Previous Round Multiplier:";
-                mainButton.textContent = "1. Predict Next Round";
-                mainButton.classList.remove('learn-mode');
-                roundInput.value = actual.toFixed(2); // Use actual result as 'last round' for next prediction
-                isPredictionMode = true;
-
-                updateLearningStatus();
-                predictionResultEl.textContent = "Learning Complete. Ready for New Prediction.";
-                zoneStatusEl.textContent = 'Learning Logged.';
-
+        // 3. RESET All Data (Start Over)
+        resetButton.addEventListener('click', () => {
+             if (confirm("ARE YOU SURE you want to DELETE ALL logged history and start from Round #1? This cannot be undone.")) {
+                localStorage.removeItem('aviator_totalRounds');
+                localStorage.removeItem('aviator_history');
+                totalRounds = 0;
+                history = [];
+                saveState();
+                systemMessageEl.textContent = "Data Cleared. Start logging from Round #1.";
             }
         });
 
@@ -534,6 +370,7 @@
         setInterval(updateClock, 1000); 
         updateLearningStatus();
         renderHistory();
+        roundInput.focus();
     </script>
 </body>
 </html>
