@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Aviator Learning Log & Data Control with Risk Assessment</title>
     <style>
-        /* CSS STYLES (UNCHANGED) */
+        /* CSS STYLES */
         body {
             font-family: 'Arial', sans-serif;
             background-color: #0d0d0d;
@@ -163,6 +163,53 @@
         .zone-status.red { color: #E57373; }
         .zone-status.green { color: #8BC34A; }
         .zone-status.orange { color: #FF9800; }
+
+        /* TOGGLE SWITCH STYLES */
+        .toggle-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background-color: #2c2c2c;
+            padding: 8px 15px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            font-size: 14px;
+        }
+        .switch {
+          position: relative;
+          display: inline-block;
+          width: 45px;
+          height: 25px;
+        }
+        .switch input {opacity: 0; width: 0; height: 0;}
+        .slider {
+          position: absolute;
+          cursor: pointer;
+          top: 0;
+          left: 0;
+          right: 0;
+          bottom: 0;
+          background-color: #ccc;
+          transition: .4s;
+          border-radius: 34px;
+        }
+        .slider:before {
+          position: absolute;
+          content: "";
+          height: 17px;
+          width: 17px;
+          left: 4px;
+          bottom: 4px;
+          background-color: white;
+          transition: .4s;
+          border-radius: 50%;
+        }
+        input:checked + .slider {
+          background-color: #4CAF50;
+        }
+        input:checked + .slider:before {
+          transform: translateX(20px);
+        }
     </style>
 </head>
 <body>
@@ -171,33 +218,41 @@
 
         <div id="clockDisplay">--:--:--</div>
         
-        <label for="roundInput" id="roundLabel">Weka Multiplier ya Raundi (Matokeo Halisi):</label>
+        <label for="roundInput" id="roundLabel">Enter Round Multiplier (Actual Result):</label>
         
-        <div style="display: flex; align-items: center; margin-bottom: 20px;">
-            <input type="number" id="roundInput" step="0.01" placeholder="Mfano: 1.50 au 8.23" style="margin-bottom: 0;">
+        <div style="display: flex; align-items: center;">
+            <input type="number" id="roundInput" step="0.01" placeholder="Example: 1.50 or 8.23" style="margin-bottom: 0;">
             <button id="micBtn" style="width: auto; padding: 12px 15px; margin-bottom: 0;">🎤</button>
         </div>
+
+        <div class="toggle-container">
+            <span>Voice Auto-Log (ON/OFF):</span>
+            <label class="switch">
+              <input type="checkbox" id="autoLogToggle" checked>
+              <span class="slider"></span>
+            </label>
+        </div>
         
-        <button id="logButton">INGIZA MATOKEO YA RAUNDI</button>
+        <button id="logButton">LOG ROUND RESULT</button>
 
         <div id="results" class="result-box">
-            <div id="riskAssessment">Inachambua Hatari...</div>
-            <div class="message" id="systemMessage">Weka matokeo ya raundi ya kwanza.</div>
+            <div id="riskAssessment">Analyzing Risk...</div>
+            <div class="message" id="systemMessage">Enter the first round result.</div>
         </div>
         
         <div id="controlButtons" style="display: flex; gap: 10px; margin-top: 20px;">
-            <button id="undoButton" style="width: 50%;">TENGUA Raundi ya Mwisho (UNDO)</button>
-            <button id="resetButton" style="width: 50%;">FUTA Data Yote (RESET)</button>
+            <button id="undoButton" style="width: 50%;">UNDO Last Round</button>
+            <button id="resetButton" style="width: 50%;">RESET All Data</button>
         </div>
 
         <div id="historyLog">
-            <h3>Historia ya Raundi:</h3>
+            <h3>Round History:</h3>
             <div id="historyList"></div>
             <div class="learning-status" id="learningStatus"></div>
         </div>
         
         <p class="disclaimer" style="font-size: 12px; color: #9e9e9e; text-align: center; margin-top: 20px;">
-            Zana hii inarekodi historia yako kwa uchambuzi. Hatari inatokana na data ulizoingiza tu.
+            This tool records your history for analysis. Risk is based only on your logged data.
         </p>
 
     </div>
@@ -208,8 +263,8 @@
         const TIME_WINDOW_FOR_LEARNING = 90; 
         
         let totalRounds = parseInt(localStorage.getItem('aviator_totalRounds') || 0);
-        let errors = parseInt(localStorage.getItem('aviator_errors') || 0); // Kufuatilia Makosa ya Uingizaji
-        let attempts = parseInt(localStorage.getItem('aviator_attempts') || 0); // Kufuatilia Jaribio la Kurekebisha Data
+        let errors = parseInt(localStorage.getItem('aviator_errors') || 0); 
+        let attempts = parseInt(localStorage.getItem('aviator_attempts') || 0); 
         let history = JSON.parse(localStorage.getItem('aviator_history') || '[]');
         
         const roundInput = document.getElementById('roundInput'); 
@@ -217,6 +272,7 @@
         const undoButton = document.getElementById('undoButton');
         const resetButton = document.getElementById('resetButton');
         const micBtn = document.getElementById('micBtn'); 
+        const autoLogToggle = document.getElementById('autoLogToggle'); // NEW
         const clockDisplay = document.getElementById('clockDisplay');
         const systemMessageEl = document.getElementById('systemMessage');
         const learningStatusEl = document.getElementById('learningStatus');
@@ -266,10 +322,11 @@
 
         function updateLearningStatus() {
             const errorPercent = attempts > 0 ? ((errors / attempts) * 100).toFixed(1) : 0;
-            // Kuonyesha Errors na Attempts za kurekebisha data
             learningStatusEl.textContent = 
-                `Jumla ya Raundi: ${totalRounds} | Majaribio ya Kurekebisha: ${attempts} | Makosa ya Uingizaji: ${errors} (${errorPercent}%)`;
+                `Total Rounds Logged: ${totalRounds} | Data Correction Attempts: ${attempts} | Logged Errors (UNDO): ${errors} (${errorPercent}%)`;
             undoButton.disabled = history.length === 0;
+            // Update toggle state on load/save
+            autoLogToggle.checked = (localStorage.getItem('aviator_autoLog') === 'true' || localStorage.getItem('aviator_autoLog') === null);
         }
 
         function renderHistory() {
@@ -277,7 +334,7 @@
                 const zoneClass = getZoneClass(parseFloat(item.actual));
                 
                 return `<div class="history-item">
-                    [${item.time} / ${item.cycleTime}] Raundi #${item.roundNum}: <span class="${zoneClass}">${item.actual}x (${item.zone})</span>
+                    [${item.time} / ${item.cycleTime}] Round #${item.roundNum}: <span class="${zoneClass}">${item.actual}x (${item.zone})</span>
                 </div>`;
             }).join('');
         }
@@ -317,20 +374,20 @@
             let message = '';
             
             if (totalCount < 5) { 
-                message = `Tahadhari: Data haitoshi (${totalCount}) kwa uchambuzi wa hatari kwa muda huu.`;
+                message = `Caution: Insufficient data (${totalCount}) for risk analysis at this cycle time.`;
                 riskAssessmentEl.style.backgroundColor = '#555';
             } else {
                 const redPercent = (redCount / totalCount) * 100;
                 const orangePercent = (orangeCount / totalCount) * 100;
 
                 if (redPercent > 60) {
-                    message = `🚨 **HATARI KUBWA!** ${redPercent.toFixed(0)}% zimefungwa chini ya 2.00x.`;
+                    message = `🚨 **HIGH RISK!** ${redPercent.toFixed(0)}% crashed below 2.00x in this window.`;
                     riskAssessmentEl.style.backgroundColor = '#E57373'; 
                 } else if (orangePercent > 10) {
-                    message = `💰 **JACKPOT STATS!** ${orangePercent.toFixed(0)}% zimefika 10.00x+.`;
+                    message = `💰 **JACKPOT STATS!** ${orangePercent.toFixed(0)}% hit 10.00x+ in this window.`;
                     riskAssessmentEl.style.backgroundColor = '#4CAF50'; 
                 } else {
-                    message = `🟢 **HALI YA KAWAIDA.** Hatari ni ya wastani (Raundi zilizopatikana: ${totalCount}).`;
+                    message = `🟢 **NORMAL CONDITIONS.** Risk is currently moderate (Rounds Found: ${totalCount}).`;
                     riskAssessmentEl.style.backgroundColor = '#333'; 
                 }
             }
@@ -344,7 +401,7 @@
              const inputValue = parseFloat(roundInput.value);
 
             if (isNaN(inputValue) || inputValue < 1.00) {
-                systemMessageEl.textContent = "Tafadhali weka namba halali (>= 1.00).";
+                systemMessageEl.textContent = "Please enter a valid multiplier (>= 1.00).";
                 return;
             }
 
@@ -366,7 +423,7 @@
             }
 
             saveState();
-            systemMessageEl.textContent = `Raundi #${totalRounds} imeingizwa: ${actual}x.`;
+            systemMessageEl.textContent = `Round #${totalRounds} logged: ${actual}x.`;
             roundInput.value = ''; 
             roundInput.focus();
         }
@@ -384,27 +441,24 @@
                 
                 // Logging action to track data cleaning attempts
                 attempts++;
-                errors++; // Count this as a correction error
+                errors++; 
                 
                 saveState();
-                systemMessageEl.textContent = `Raundi ya mwisho (${lastRound.actual}x) **IMETENGULIWA**. Jumla: ${totalRounds}`;
+                systemMessageEl.textContent = `Last Round (${lastRound.actual}x) **UNDONE**. Total: ${totalRounds}`;
                 roundInput.value = lastRound.actual; 
             } else {
-                systemMessageEl.textContent = "Hakuna raundi za kutengua.";
+                systemMessageEl.textContent = "No rounds to undo.";
             }
         });
 
         // 3. RESET All Data 
         resetButton.addEventListener('click', () => {
-             if (confirm("UNA UHAKIKA unataka KUFUTA historia YOTE iliyohifadhiwa na kuanza upya kutoka Raundi #1? Hili haliwezi kurudishwa.")) {
+             if (confirm("ARE YOU SURE you want to DELETE ALL logged history and start from Round #1? This cannot be undone.")) {
                 
                 // Logging action as an attempt
                 attempts++;
 
-                localStorage.removeItem('aviator_totalRounds');
-                localStorage.removeItem('aviator_history');
-                localStorage.removeItem('aviator_errors'); 
-                localStorage.removeItem('aviator_attempts');
+                localStorage.clear(); // Use clear to ensure all related data is removed
                 
                 totalRounds = 0;
                 errors = 0; 
@@ -412,23 +466,30 @@
                 history = [];
                 
                 saveState();
-                systemMessageEl.textContent = "Data Imefutwa. Anza kuingiza raundi kutoka Raundi #1.";
+                systemMessageEl.textContent = "Data Cleared. Start logging from Round #1.";
             }
         });
+        
+        // 4. AUTO-LOG TOGGLE HANDLER
+        autoLogToggle.addEventListener('change', () => {
+            localStorage.setItem('aviator_autoLog', autoLogToggle.checked);
+            systemMessageEl.textContent = `Voice Auto-Log is now ${autoLogToggle.checked ? 'ON' : 'OFF'}.`;
+        });
 
-        // --- VOICE INPUT LOGIC (AUTO-LOG INCLUDED) ---
+
+        // --- VOICE INPUT LOGIC (WITH TOGGLE CHECK) ---
         const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
 
         if (SpeechRecognition) {
             const recognition = new SpeechRecognition();
             recognition.continuous = false;
-            recognition.lang = 'sw-KE'; // Kiswahili
+            recognition.lang = 'en-US'; // Changed to English for recognition
             micBtn.style.backgroundColor = MIC_BUTTON_DEFAULT_COLOR;
 
             micBtn.addEventListener('click', () => {
                 micBtn.style.backgroundColor = MIC_BUTTON_RECORDING_COLOR;
-                micBtn.textContent = '🔴 ZUNGUMZA';
-                systemMessageEl.textContent = "Inasikiliza...";
+                micBtn.textContent = '🔴 SPEAK';
+                systemMessageEl.textContent = "Listening...";
                 recognition.start();
             });
 
@@ -441,18 +502,21 @@
                 if (numberMatch) {
                     let multiplier = parseFloat(numberMatch[0]).toFixed(2);
                     
-                    if (multiplier.includes(',')) {
-                        multiplier = multiplier.replace(',', '.');
-                    }
-                    
                     roundInput.value = multiplier;
                     
-                    // --- AUTO-LOG FUNCTIONALITY ---
-                    systemMessageEl.textContent = `Sauti Imepokelewa: ${multiplier}x. Inaingiza kiotomatiki...`;
-                    logCurrentRound(); 
+                    const isAutoLogOn = autoLogToggle.checked;
+
+                    if (isAutoLogOn) {
+                        // AUTO-LOG
+                        systemMessageEl.textContent = `Voice Received: ${multiplier}x. Auto-Logging...`;
+                        logCurrentRound(); 
+                    } else {
+                        // FILL INPUT ONLY
+                        systemMessageEl.textContent = `Voice Received: ${multiplier}x. Please press LOG ROUND RESULT to save.`;
+                    }
                     
                 } else {
-                     systemMessageEl.textContent = "Sikuelewi. Jaribu tena au andika.";
+                     systemMessageEl.textContent = "Could not understand. Try again or type.";
                 }
             };
             recognition.onspeechend = () => {
@@ -463,7 +527,7 @@
             recognition.onerror = () => {
                 micBtn.style.backgroundColor = MIC_BUTTON_DEFAULT_COLOR; 
                 micBtn.textContent = '🎤';
-                systemMessageEl.textContent = "Hitilafu ya Sauti au Muda umekwisha. Jaribu tena.";
+                systemMessageEl.textContent = "Voice error or timeout. Try again.";
             };
 
         } else {
