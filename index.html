@@ -139,7 +139,6 @@
             padding-top: 8px;
         }
 
-
         #historyLog {
             margin-top: 25px;
             padding: 15px;
@@ -209,8 +208,8 @@
         const TIME_WINDOW_FOR_LEARNING = 90; 
         
         let totalRounds = parseInt(localStorage.getItem('aviator_totalRounds') || 0);
-        let errors = parseInt(localStorage.getItem('aviator_errors') || 0); // New Error Tracking
-        let attempts = parseInt(localStorage.getItem('aviator_attempts') || 0); // New Attempts Tracking
+        let errors = parseInt(localStorage.getItem('aviator_errors') || 0); // Kufuatilia Makosa ya Uingizaji
+        let attempts = parseInt(localStorage.getItem('aviator_attempts') || 0); // Kufuatilia Jaribio la Kurekebisha Data
         let history = JSON.parse(localStorage.getItem('aviator_history') || '[]');
         
         const roundInput = document.getElementById('roundInput'); 
@@ -267,9 +266,9 @@
 
         function updateLearningStatus() {
             const errorPercent = attempts > 0 ? ((errors / attempts) * 100).toFixed(1) : 0;
-            // CHANGED: Kuonyesha Errors na Attempts
+            // Kuonyesha Errors na Attempts za kurekebisha data
             learningStatusEl.textContent = 
-                `Rounds Logged: ${totalRounds} | Attempts to UNDO/RESET: ${attempts} | Logged Errors: ${errors} (${errorPercent}%)`;
+                `Jumla ya Raundi: ${totalRounds} | Majaribio ya Kurekebisha: ${attempts} | Makosa ya Uingizaji: ${errors} (${errorPercent}%)`;
             undoButton.disabled = history.length === 0;
         }
 
@@ -285,8 +284,8 @@
 
         function saveState() {
             localStorage.setItem('aviator_totalRounds', totalRounds);
-            localStorage.setItem('aviator_errors', errors); // Save Errors
-            localStorage.setItem('aviator_attempts', attempts); // Save Attempts
+            localStorage.setItem('aviator_errors', errors); 
+            localStorage.setItem('aviator_attempts', attempts); 
             localStorage.setItem('aviator_history', JSON.stringify(history));
             updateLearningStatus();
             renderHistory();
@@ -325,13 +324,13 @@
                 const orangePercent = (orangeCount / totalCount) * 100;
 
                 if (redPercent > 60) {
-                    message = `🚨 HATARI KUBWA! ${redPercent.toFixed(0)}% zimefungwa chini ya 2.00x katika muda huu.`;
+                    message = `🚨 **HATARI KUBWA!** ${redPercent.toFixed(0)}% zimefungwa chini ya 2.00x.`;
                     riskAssessmentEl.style.backgroundColor = '#E57373'; 
                 } else if (orangePercent > 10) {
-                    message = `💰 JACKPOT STATS! ${orangePercent.toFixed(0)}% zimefika 10.00x+ katika muda huu.`;
+                    message = `💰 **JACKPOT STATS!** ${orangePercent.toFixed(0)}% zimefika 10.00x+.`;
                     riskAssessmentEl.style.backgroundColor = '#4CAF50'; 
                 } else {
-                    message = `🟢 HALI YA KAWAIDA. Hatari ni ya wastani (Raundi zilizopatikana: ${totalCount}).`;
+                    message = `🟢 **HALI YA KAWAIDA.** Hatari ni ya wastani (Raundi zilizopatikana: ${totalCount}).`;
                     riskAssessmentEl.style.backgroundColor = '#333'; 
                 }
             }
@@ -374,33 +373,32 @@
 
         logButton.addEventListener('click', logCurrentRound);
 
-        // 2. UNDO Last Round (Delete/Fix Last Entry)
+        // 2. UNDO Last Round 
         undoButton.addEventListener('click', () => {
             if (history.length > 0) {
                 const lastRound = history.shift(); 
                 
-                // FIXED: Decrement totalRounds only if it was greater than zero
                 if (totalRounds > 0) {
                     totalRounds--; 
                 }
                 
-                // Log the action as an error/attempt to track data cleaning
+                // Logging action to track data cleaning attempts
                 attempts++;
-                errors++;
+                errors++; // Count this as a correction error
                 
                 saveState();
-                systemMessageEl.textContent = `Raundi ya mwisho (${lastRound.actual}x) IMETENGULIWA. Jumla: ${totalRounds}`;
+                systemMessageEl.textContent = `Raundi ya mwisho (${lastRound.actual}x) **IMETENGULIWA**. Jumla: ${totalRounds}`;
                 roundInput.value = lastRound.actual; 
             } else {
                 systemMessageEl.textContent = "Hakuna raundi za kutengua.";
             }
         });
 
-        // 3. RESET All Data (Start Over)
+        // 3. RESET All Data 
         resetButton.addEventListener('click', () => {
              if (confirm("UNA UHAKIKA unataka KUFUTA historia YOTE iliyohifadhiwa na kuanza upya kutoka Raundi #1? Hili haliwezi kurudishwa.")) {
                 
-                // Log the action as an attempt
+                // Logging action as an attempt
                 attempts++;
 
                 localStorage.removeItem('aviator_totalRounds');
@@ -410,7 +408,7 @@
                 
                 totalRounds = 0;
                 errors = 0; 
-                attempts = 0; // Reset attempts as well
+                attempts = 0;
                 history = [];
                 
                 saveState();
@@ -418,13 +416,13 @@
             }
         });
 
-        // --- VOICE INPUT LOGIC ---
+        // --- VOICE INPUT LOGIC (AUTO-LOG INCLUDED) ---
         const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
 
         if (SpeechRecognition) {
             const recognition = new SpeechRecognition();
             recognition.continuous = false;
-            recognition.lang = 'sw-KE'; 
+            recognition.lang = 'sw-KE'; // Kiswahili
             micBtn.style.backgroundColor = MIC_BUTTON_DEFAULT_COLOR;
 
             micBtn.addEventListener('click', () => {
@@ -449,8 +447,8 @@
                     
                     roundInput.value = multiplier;
                     
-                    // --- AUTO-SEND/AUTO-LOG ---
-                    systemMessageEl.textContent = `Sauti Imepokelewa: ${multiplier}x. Inaingiza...`;
+                    // --- AUTO-LOG FUNCTIONALITY ---
+                    systemMessageEl.textContent = `Sauti Imepokelewa: ${multiplier}x. Inaingiza kiotomatiki...`;
                     logCurrentRound(); 
                     
                 } else {
