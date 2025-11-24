@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Aviator Data Analyser | Cyber Blue V10</title>
+    <title>Aviator Data Analyser | Cyber Blue V11</title>
     <style>
         /* CSS YA UREMBO MPYA (Cyber Blue/Dark Theme) */
         body {
@@ -127,35 +127,9 @@
             border: 1px solid #00BFFF50;
             box-shadow: 0 0 15px rgba(0, 191, 255, 0.2);
         }
-        .zone-status {
-            font-size: 18px;
-            font-weight: bold;
-            text-align: center;
-            padding: 5px 0;
-        }
-        .zone-status.red { color: #FF4500; }
-        .zone-status.green { color: #32CD32; }
-        .zone-status.orange { color: #FFD700; }
 
         /* ALERT AND RISK ASSESSMENT SECTION */
-        #stabilityStatus { 
-            padding: 12px;
-            border-radius: 8px;
-            margin-top: 15px;
-            font-weight: bold;
-            text-align: center;
-            font-size: 16px;
-        }
-        #stabilityStatus.loading { 
-            background-color: #FF8C00; 
-            color: #0A0A0A;
-        }
-        #stabilityStatus.stable {
-            background-color: #32CD32; 
-            color: #0A0A0A;
-        }
-
-
+        
         #riskAssessment {
             background-color: #333333;
             color: #fff;
@@ -202,6 +176,9 @@
             padding: 4px 0;
             border-bottom: 1px dotted #333;
         }
+        .history-item span.red { color: #FF4500; }
+        .history-item span.green { color: #32CD32; }
+        .history-item span.orange { color: #FFD700; }
         .disclaimer {
             font-size: 11px; 
             color: #555; 
@@ -227,11 +204,10 @@
         <button id="mainButton">INGIZA MATOKEO NA JIFUNZE</button>
         
         <div id="results" class="result-box">
-            <div id="stabilityStatus"></div> 
-
             <div id="alertBox">Mfumo Tayari Kujifunza Raundi...</div>
 
-            <div id="riskAssessment">Inachambua hatari kwa muda huu...</div>
+            <div id="riskAssessment">Uchambuzi wa Hatari Unategemea Historia yako</div>
+            
             <div class="learning-status" id="learningStatus"></div>
         </div>
         
@@ -257,15 +233,8 @@
         const ERROR_THRESHOLD = 5.0; 
         const MIN_ATTEMPTS_FOR_RESET = 30; 
         const MISTAKE_PERCENTAGE_RESET = 0.50; 
-        const MIN_ATTEMPTS_FOR_STABLE = 10; 
         
-        // Jackpot Tiers 
-        const JACKPOT_TIERS = [
-            { threshold: 200.00, name: 'Mega Jackpot' },
-            { threshold: 100.00, name: 'Grand Jackpot' },
-            { threshold: 50.00, name: 'Major Jackpot' },
-            { threshold: 10.00, name: 'Minor Jackpot' }
-        ];
+        // Jackpot Tiers (IMEONDOLEWA)
 
         let attempts = parseInt(localStorage.getItem('aviator_attempts') || 0);
         let mistakes = parseInt(localStorage.getItem('aviator_mistakes') || 0);
@@ -284,7 +253,7 @@
         const alertBoxEl = document.getElementById('alertBox');
         const deleteLastRoundBtn = document.getElementById('deleteLastRoundBtn');
         const resetAllDataBtn = document.getElementById('resetAllDataBtn'); 
-        const stabilityStatusEl = document.getElementById('stabilityStatus'); 
+        // stabilityStatusEl IMEONDOLEWA
 
         // --- UTILITY FUNCTIONS ---
         function getZone(multiplier) {
@@ -320,7 +289,7 @@
             const now = new Date();
             clockDisplay.textContent = formatTime(now);
             
-            assessRiskByTime(getCurrentCycleSeconds()); 
+            // assessRiskByTime IMEONDOLEWA
             checkHistoryForAlerts();
         }
 
@@ -353,19 +322,13 @@
 
         function updateLearningStatus() {
             const errorPercent = attempts > 0 ? ((mistakes / attempts) * 100).toFixed(1) : 0;
+            // Ujumbe umefupishwa (Request 4)
             learningStatusEl.textContent = 
-                `Tasks Logged: ${attempts} | Errors Recorded: ${mistakes} (${errorPercent}%)`;
+                `Kuingiza: ${attempts} | Makosa: ${mistakes} (${errorPercent}%)`;
             
             checkForAutoReset(); 
             
-            // LOGIKI YA STABILITY STATUS HAPA
-            if (attempts < MIN_ATTEMPTS_FOR_STABLE) {
-                stabilityStatusEl.className = 'loading';
-                stabilityStatusEl.textContent = `⏳ INAJIFUNZA: ${attempts}/${MIN_ATTEMPTS_FOR_STABLE} Raundi Zinaingizwa...`;
-            } else {
-                stabilityStatusEl.className = 'stable';
-                stabilityStatusEl.textContent = `✅ MFUMO UKO STABLE! Data Za Kutosha Zimekusanywa.`;
-            }
+            // Stability Status Logic IMEONDOLEWA
         }
 
         function updateHistory(newRound) {
@@ -402,7 +365,7 @@
             if (multiplier >= 10.00) return 'Orange';
             if (multiplier >= 2.00) return 'Green';
             if (multiplier >= 1.00) return 'Red';
-            return 'Unknown';
+            return 'Haijulikani'; // Swahili stable (Request 3)
         }
 
         function checkHistoryForAlerts() {
@@ -414,28 +377,29 @@
             const lastRoundActual = parseFloat(history[0].actual);
             const lastTwoZones = history.slice(0, 2).map(item => getZoneKey(parseFloat(item.actual)));
             
-            // Alert ya Jackpot ya Haraka (Round ya mwisho ilikuwa Jackpot)
+            // Alert ya Jackpot ya Haraka (Logic simplified kwa Jackpot ya zamani - Request 1)
             if (lastRoundActual >= 10.00) {
                 alertBoxEl.className = 'jackpot-fast-alert';
-                alertBoxEl.textContent = `👑 JACKPOT IMEPIGWA: ${lastRoundActual.toFixed(2)}x! Soko Lipo HOT!`;
+                // Ujumbe umerekebishwa kuwa Swahili Stable (Request 3)
+                alertBoxEl.textContent = `🚨 TAHADHARI KALI: Jackpot ${lastRoundActual.toFixed(2)}x IMETOKEZA. Soko Lipo Kwenye Moto!`;
                 return;
             }
 
-            // Green Streak Alert
+            // Green Streak Alert (Swahili stable - Request 3)
             if (lastTwoZones.every(zone => zone === 'Green')) {
                 alertBoxEl.className = 'green-alert';
                 alertBoxEl.textContent = '🟢🟢 TAHADHARI: GREEN ZONE 2X MFUFUULIZO! Endelea kwa tahadhari.';
                 return;
             }
 
-            // Red Streak Alert 
+            // Red Streak Alert (Swahili stable - Request 3)
             if (lastTwoZones.every(zone => zone === 'Red')) {
                 alertBoxEl.className = 'red-alert';
                 alertBoxEl.textContent = '🔴🔴 TAHADHARI: RED ZONE 2X MFUFUULIZO! Mchanganyiko unakaribia.';
                 return;
             }
 
-            // Mixed Zone Alert
+            // Mixed Zone Alert (Swahili stable - Request 3)
             if (lastTwoZones.includes('Red') && lastTwoZones.includes('Green')) {
                 alertBoxEl.className = 'mixed-alert';
                 alertBoxEl.textContent = '⚠️ MCHANGANYIKO WA RED/GREEN! Soko halina uhakika.';
@@ -445,72 +409,7 @@
             alertBoxEl.className = '';
         }
 
-        // Multi-Jackpot Analysis 
-        function assessRiskByTime(currentCycleSecond) {
-            const windowSize = 60; 
-            let redCount = 0;
-            let totalCount = 0;
-            
-            let jackpotCounts = {};
-            JACKPOT_TIERS.forEach(tier => jackpotCounts[tier.threshold] = { count: 0 });
-
-            for (const item of history) {
-                const actual = parseFloat(item.actual);
-                const itemCycleSecond = parseInt(item.cycleSecond);
-                let diff = Math.abs(currentCycleSecond - itemCycleSecond);
-                if (diff > CYCLE_SECONDS / 2) diff = CYCLE_SECONDS - diff;
-
-                if (diff <= windowSize) {
-                    totalCount++;
-                    if (actual < 2.00) redCount++;
-                    
-                    JACKPOT_TIERS.forEach(tier => {
-                        if (actual >= tier.threshold) {
-                            jackpotCounts[tier.threshold].count++;
-                        }
-                    });
-                }
-            }
-            
-            let message = '';
-            
-            if (totalCount < 5) { 
-                message = `Chukua tahadhari: Historia bado haitoshi katika muda huu (${getCycleTimeDisplay(currentCycleSecond)}).`;
-                riskAssessmentEl.style.backgroundColor = '#555';
-            } else {
-                const redPercent = (redCount / totalCount) * 100;
-                
-                let jackpotAlerts = [];
-                let isJackpotTime = false;
-
-                // Anza na Jackpot kubwa
-                JACKPOT_TIERS.sort((a, b) => b.threshold - a.threshold).forEach(tier => {
-                    const tierData = jackpotCounts[tier.threshold];
-                    const tierPercent = (tierData.count / totalCount) * 100;
-
-                    // Imenekana Jackpot 1 au zaidi
-                    if (tierPercent >= 5 && tierData.count >= 1) { 
-                        jackpotAlerts.push(`${tier.name} (${tier.threshold.toFixed(2)}x)`);
-                        isJackpotTime = true;
-                    }
-                });
-                
-                // Panga Jackpot Alert
-                if (isJackpotTime) {
-                    message = `👑 JACKPOT INAWEZEKANA: ${jackpotAlerts.join(', ')} Inakaribia katika muda huu!`;
-                    riskAssessmentEl.style.backgroundColor = '#4B0082'; // Deep Purple
-                }
-                // Panga Red/Normal Alert
-                else if (redPercent > 60) {
-                    message = `🚨 HATARI KUBWA! ${redPercent.toFixed(0)}% ya raundi zimefungwa chini ya 2.00x.`;
-                    riskAssessmentEl.style.backgroundColor = '#FF4500'; 
-                } else {
-                    message = `🟢 HALI YA KAWAIDA. Hatari ni ndogo kwa sasa.`;
-                    riskAssessmentEl.style.backgroundColor = '#333'; 
-                }
-            }
-            riskAssessmentEl.textContent = message;
-        }
+        // assessRiskByTime IMEONDOLEWA
 
         // --- VOICE INPUT LOGIC (UNCHANGED) ---
         const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -535,9 +434,11 @@
 
                 if (numberMatch) {
                     roundInput.value = parseFloat(numberMatch[0]).toFixed(2);
+                    // Swahili stable (Request 3)
                     alertBoxEl.textContent = "Sauti Imepokelewa. Bonyeza kitufe Kuingiza.";
                     alertBoxEl.className = 'green-alert';
                 } else {
+                     // Swahili stable (Request 3)
                      alertBoxEl.textContent = "Sikuelewi. Jaribu tena au andika.";
                      alertBoxEl.className = 'mixed-alert';
                 }
@@ -562,6 +463,7 @@
 
             if (isNaN(actual) || actual <= 0.99) {
                 alertBoxEl.className = 'red-alert';
+                // Swahili stable (Request 3)
                 alertBoxEl.textContent = "Weka namba sahihi (Multipler > 1.0) Kuingiza Matokeo.";
                 return;
             }
@@ -588,6 +490,7 @@
 
             roundInput.value = ''; 
             alertBoxEl.className = 'green-alert';
+            // Swahili stable (Request 3)
             alertBoxEl.textContent = "Kujifunza Kumekamilika! Endelea kuingiza raundi...";
         });
 
@@ -603,9 +506,11 @@
                 updateLearningStatus();
                 renderHistory();
                 alertBoxEl.className = 'mixed-alert';
+                // Swahili stable (Request 3)
                 alertBoxEl.textContent = `⚠️ Raundi ya ${deletedEntry.actual}x IMETOLEWA. Rekebisha na Ingiza tena.`;
             } else {
                 alertBoxEl.className = 'red-alert';
+                // Swahili stable (Request 3)
                 alertBoxEl.textContent = 'Hakuna Raundi ya kufuta!';
             }
         });
@@ -616,8 +521,9 @@
         // Initialization
         setInterval(updateClock, 1000); 
         updateLearningStatus();
-        renderHistory();
+        renderHistory(); 
         alertBoxEl.textContent = 'Mfumo Tayari Kujifunza Raundi...';
     </script>
 </body>
 </html>
+ 
