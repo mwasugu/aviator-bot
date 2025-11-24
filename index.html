@@ -3,39 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Aviator Data Analyser | Cyber Blue V8</title>
+    <title>Aviator Data Analyser | Cyber Blue V10</title>
     <style>
-        /* --- ANIMATION CSS --- */
-        @keyframes explosion {
-            0% {
-                transform: scale(0.1);
-                opacity: 0;
-            }
-            30% {
-                transform: scale(1.5);
-                opacity: 1;
-                box-shadow: 0 0 100px 50px rgba(255, 215, 0, 0.8), 0 0 200px 100px rgba(255, 69, 0, 0.7);
-            }
-            100% {
-                transform: scale(3.5);
-                opacity: 0;
-            }
-        }
-        .jackpot-explosion {
-            position: fixed;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%) scale(0);
-            width: 200px;
-            height: 200px;
-            border-radius: 50%;
-            background-color: transparent;
-            pointer-events: none;
-            z-index: 9999;
-            animation: explosion 1.5s ease-out forwards;
-        }
-
-
         /* CSS YA UREMBO MPYA (Cyber Blue/Dark Theme) */
         body {
             font-family: 'Roboto Mono', monospace; 
@@ -118,7 +87,7 @@
             display: flex; 
             justify-content: space-between; 
             gap: 10px; 
-            margin-top: 15px; /* Nafasi kati ya Results na Vifungo */
+            margin-top: 25px; /* Nafasi baada ya Results */
             margin-bottom: 10px;
         }
         #deleteLastRoundBtn {
@@ -169,7 +138,7 @@
         .zone-status.orange { color: #FFD700; }
 
         /* ALERT AND RISK ASSESSMENT SECTION */
-        #stabilityStatus { /* New element for Loading/Stable */
+        #stabilityStatus { 
             padding: 12px;
             border-radius: 8px;
             margin-top: 15px;
@@ -178,11 +147,11 @@
             font-size: 16px;
         }
         #stabilityStatus.loading { 
-            background-color: #FF8C00; /* Orange */
+            background-color: #FF8C00; 
             color: #0A0A0A;
         }
         #stabilityStatus.stable {
-            background-color: #32CD32; /* Lime Green */
+            background-color: #32CD32; 
             color: #0A0A0A;
         }
 
@@ -242,7 +211,6 @@
     </style>
 </head>
 <body>
-    <div id="explosionContainer"></div>
     
     <div class="container">
         <h1>🚀 AVIATOR ANALYSER</h1>
@@ -289,7 +257,7 @@
         const ERROR_THRESHOLD = 5.0; 
         const MIN_ATTEMPTS_FOR_RESET = 30; 
         const MISTAKE_PERCENTAGE_RESET = 0.50; 
-        const MIN_ATTEMPTS_FOR_STABLE = 10; // Raundi 10 zinahitajika kwa Stable
+        const MIN_ATTEMPTS_FOR_STABLE = 10; 
         
         // Jackpot Tiers 
         const JACKPOT_TIERS = [
@@ -316,8 +284,7 @@
         const alertBoxEl = document.getElementById('alertBox');
         const deleteLastRoundBtn = document.getElementById('deleteLastRoundBtn');
         const resetAllDataBtn = document.getElementById('resetAllDataBtn'); 
-        const explosionContainer = document.getElementById('explosionContainer'); 
-        const stabilityStatusEl = document.getElementById('stabilityStatus'); // Element Mpya
+        const stabilityStatusEl = document.getElementById('stabilityStatus'); 
 
         // --- UTILITY FUNCTIONS ---
         function getZone(multiplier) {
@@ -599,15 +566,6 @@
                 return;
             }
             
-            // --- LOGIKI YA MLIPUKO ---
-            if (actual >= 10.00) {
-                explosionContainer.classList.add('jackpot-explosion');
-                setTimeout(() => {
-                    explosionContainer.classList.remove('jackpot-explosion');
-                }, 1500);
-            }
-            // --------------------------
-
             const lastRoundEntry = history.length > 0 ? history[0].actual : '1.00'; 
             
             attempts++;
