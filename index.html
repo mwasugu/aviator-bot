@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Aviator Learning Log & Data Control with Risk Assessment</title>
     <style>
-        /* CSS STYLES */
+        /* CSS STYLES (UNCHANGED) */
         body {
             font-family: 'Arial', sans-serif;
             background-color: #0d0d0d;
@@ -36,6 +36,7 @@
             font-weight: bold;
             color: #bdbdbd;
         }
+        /* Adjusted input styling */
         input[type="number"] {
             width: calc(100% - 22px);
             padding: 12px;
@@ -45,6 +46,8 @@
             background-color: #2c2c2c;
             color: #fff;
             font-size: 18px;
+            /* Optional: Hide cursor on some platforms for 'readonly' feel */
+            caret-color: transparent; 
         }
         button {
             width: 100%;
@@ -129,12 +132,12 @@
             font-size: 16px;
         }
 
-        /* Learning Status/Error Display (Positioned above control buttons) */
+        /* Learning Status/Error Display */
         #learningStatusTop {
             font-size: 14px;
             color: #bdbdbd;
             text-align: center;
-            margin: 15px 0 10px 0; /* Space above and below */
+            margin: 15px 0 10px 0;
             padding: 8px 0;
             border-top: 1px dotted #444;
             border-bottom: 1px dotted #444;
@@ -222,7 +225,7 @@
         <label for="roundInput" id="roundLabel">Enter Round Multiplier (Actual Result):</label>
         
         <div style="display: flex; align-items: center;">
-            <input type="number" id="roundInput" step="0.01" placeholder="Example: 1.50 or 8.23" style="margin-bottom: 0;" readonly>
+            <input type="number" id="roundInput" step="0.01" placeholder="Example: 1.50 or 8.23" style="margin-bottom: 0;" inputmode="none" onfocus="this.blur()">
             <button id="micBtn" style="width: auto; padding: 12px 15px; margin-bottom: 0;">🎤</button>
         </div>
 
@@ -277,7 +280,7 @@
         const autoLogToggle = document.getElementById('autoLogToggle'); 
         const clockDisplay = document.getElementById('clockDisplay');
         const systemMessageEl = document.getElementById('systemMessage');
-        const learningStatusTopEl = document.getElementById('learningStatusTop'); // NEW Element
+        const learningStatusTopEl = document.getElementById('learningStatusTop');
         const historyListEl = document.getElementById('historyList');
         const riskAssessmentEl = document.getElementById('riskAssessment');
 
@@ -303,13 +306,15 @@
             return date.toTimeString().split(' ')[0];
         }
 
+        // --- Cycle Time Fixed Logic ---
         function getCurrentCycleSeconds() {
             const now = new Date();
-            const totalSecondsOfDay = now.getHours() * 3600 + now.getMinutes() * 60 + now.getSeconds();
-            return totalSecondsOfDay % CYCLE_SECONDS; 
+            // This retrieves the current time in seconds (0 to 86399)
+            return now.getHours() * 3600 + now.getMinutes() * 60 + now.getSeconds();
         }
 
         function getCycleTimeDisplay(cycleSeconds) {
+            // This logic is now redundant as we only show the real time (HH:MM:SS)
             const minutes = Math.floor(cycleSeconds / 60);
             const seconds = cycleSeconds % 60;
             return `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
@@ -317,19 +322,22 @@
         
         function updateClock() {
             const now = new Date();
-            const cycleSeconds = getCurrentCycleSeconds();
-            clockDisplay.textContent = `${formatTime(now)} | Cycle: ${getCycleTimeDisplay(cycleSeconds)}`; 
+            // FIX: Display only the current time (HH:MM:SS) as requested
+            clockDisplay.textContent = formatTime(now); 
+            
+            // Still calculate and use cycleSeconds for Risk Assessment only
+            const totalSecondsOfDay = now.getHours() * 3600 + now.getMinutes() * 60 + now.getSeconds();
+            const cycleSeconds = totalSecondsOfDay % CYCLE_SECONDS;
             assessRiskByTime(cycleSeconds); 
         }
 
         function updateLearningStatus() {
             const errorPercent = attempts > 0 ? ((errors / attempts) * 100).toFixed(1) : 0;
-            // Displaying status in the new TOP location
+            
             learningStatusTopEl.innerHTML = 
                 `Total Rounds Logged: **${totalRounds}** | Data Correction Attempts: **${attempts}** | Logged Errors (UNDO): **${errors}** (${errorPercent}%)`;
             undoButton.disabled = history.length === 0;
             
-            // Set toggle state on load (reads from localStorage, defaults to true)
             const savedAutoLog = localStorage.getItem('aviator_autoLog');
             autoLogToggle.checked = (savedAutoLog === 'true' || savedAutoLog === null);
         }
@@ -339,7 +347,7 @@
                 const zoneClass = getZoneClass(parseFloat(item.actual));
                 
                 return `<div class="history-item">
-                    [${item.time} / ${item.cycleTime}] Round #${item.roundNum}: <span class="${zoneClass}">${item.actual}x (${item.zone})</span>
+                    [${item.time}] Round #${item.roundNum}: <span class="${zoneClass}">${item.actual}x (${item.zone})</span>
                 </div>`;
             }).join('');
         }
@@ -353,7 +361,7 @@
             renderHistory();
         }
 
-        // --- RISK ASSESSMENT LOGIC ---
+        // --- RISK ASSESSMENT LOGIC (UNCHANGED) ---
         function assessRiskByTime(currentCycleSecond) {
             const windowSize = TIME_WINDOW_FOR_LEARNING; 
             let redCount = 0; 
@@ -387,4 +395,166 @@
 
                 if (redPercent > 60) {
                     message = `🚨 **HIGH RISK!** ${redPercent.toFixed(0)}% crashed below 2.00x in this window.`;
-                    riskAssessmentEl.style.backgroundColor = '#E5737
+                    riskAssessmentEl.style.backgroundColor = '#E57373'; 
+                } else if (orangePercent > 10) {
+                    message = `💰 **JACKPOT STATS!** ${orangePercent.toFixed(0)}% hit 10.00x+ in this window.`;
+                    riskAssessmentEl.style.backgroundColor = '#4CAF50'; 
+                } else {
+                    message = `🟢 **NORMAL CONDITIONS.** Risk is currently moderate (Rounds Found: ${totalCount}).`;
+                    riskAssessmentEl.style.backgroundColor = '#333'; 
+                }
+            }
+            riskAssessmentEl.textContent = message;
+        }
+
+        // --- HANDLERS ---
+
+        // 1. LOG ROUND
+        function logCurrentRound() {
+             const inputValue = parseFloat(roundInput.value);
+
+            if (isNaN(inputValue) || inputValue < 1.00) {
+                systemMessageEl.textContent = "Please enter a valid multiplier (>= 1.00).";
+                return;
+            }
+
+            totalRounds++;
+            const actual = inputValue.toFixed(2);
+            
+            // Get current time stamp for logging
+            const now = new Date();
+            const totalSecondsOfDay = now.getHours() * 3600 + now.getMinutes() * 60 + now.getSeconds();
+            const cycleSeconds = totalSecondsOfDay % CYCLE_SECONDS;
+            
+            const historyEntry = {
+                roundNum: totalRounds,
+                time: formatTime(now), // Log real time HH:MM:SS
+                cycleTime: getCycleTimeDisplay(cycleSeconds), // Keep this for calculation compatibility
+                cycleSecond: cycleSeconds,
+                actual: actual,
+                zone: getZone(inputValue),
+            };
+            
+            history.unshift(historyEntry);
+            if (history.length > 50) { 
+                history.pop(); 
+            }
+
+            saveState();
+            systemMessageEl.textContent = `Round #${totalRounds} logged: ${actual}x.`;
+            roundInput.value = ''; 
+        }
+
+        logButton.addEventListener('click', logCurrentRound);
+
+        // 2. UNDO Last Round 
+        undoButton.addEventListener('click', () => {
+            if (history.length > 0) {
+                const lastRound = history.shift(); 
+                
+                if (totalRounds > 0) {
+                    totalRounds--; 
+                }
+                
+                attempts++;
+                errors++; 
+                
+                saveState();
+                systemMessageEl.textContent = `Last Round (${lastRound.actual}x) **UNDONE**. Total: ${totalRounds}`;
+                roundInput.value = lastRound.actual; 
+                // Allow manual correction if needed
+                roundInput.focus();
+            } else {
+                systemMessageEl.textContent = "No rounds to undo.";
+            }
+        });
+
+        // 3. RESET All Data 
+        resetButton.addEventListener('click', () => {
+             if (confirm("ARE YOU SURE you want to DELETE ALL logged history and start from Round #1? This cannot be undone.")) {
+                
+                attempts++;
+
+                localStorage.clear(); 
+                
+                totalRounds = 0;
+                errors = 0; 
+                attempts = 0;
+                history = [];
+                
+                saveState();
+                systemMessageEl.textContent = "Data Cleared. Start logging from Round #1.";
+            }
+        });
+        
+        // 4. AUTO-LOG TOGGLE HANDLER
+        autoLogToggle.addEventListener('change', () => {
+            localStorage.setItem('aviator_autoLog', autoLogToggle.checked);
+            systemMessageEl.textContent = `Voice Auto-Log is now ${autoLogToggle.checked ? 'ON' : 'OFF'}.`;
+        });
+
+
+        // --- VOICE INPUT LOGIC (WITH TOGGLE CHECK) ---
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+
+        if (SpeechRecognition) {
+            const recognition = new SpeechRecognition();
+            recognition.continuous = false;
+            recognition.lang = 'en-US'; 
+            micBtn.style.backgroundColor = MIC_BUTTON_DEFAULT_COLOR;
+
+            micBtn.addEventListener('click', () => {
+                micBtn.style.backgroundColor = MIC_BUTTON_RECORDING_COLOR;
+                micBtn.textContent = '🔴 SPEAK';
+                systemMessageEl.textContent = "Listening...";
+                recognition.start();
+                // When microphone is active, force blur the input to discourage keyboard opening
+                roundInput.blur(); 
+            });
+
+            recognition.onresult = (event) => {
+                const result = event.results[0][0].transcript;
+                const numberMatch = result.match(/(\d+\.?\d*)/); 
+                micBtn.style.backgroundColor = MIC_BUTTON_DEFAULT_COLOR;
+                micBtn.textContent = '🎤';
+
+                if (numberMatch) {
+                    let multiplier = parseFloat(numberMatch[0]).toFixed(2);
+                    
+                    roundInput.value = multiplier;
+                    
+                    const isAutoLogOn = autoLogToggle.checked;
+
+                    if (isAutoLogOn) {
+                        systemMessageEl.textContent = `Voice Received: ${multiplier}x. Auto-Logging...`;
+                        logCurrentRound(); 
+                    } else {
+                        systemMessageEl.textContent = `Voice Received: ${multiplier}x. Press LOG ROUND RESULT to save.`;
+                    }
+                    
+                } else {
+                     systemMessageEl.textContent = "Could not understand. Try again or manually enter.";
+                }
+            };
+            recognition.onspeechend = () => {
+                micBtn.style.backgroundColor = MIC_BUTTON_DEFAULT_COLOR; 
+                micBtn.textContent = '🎤';
+                recognition.stop();
+            };
+            recognition.onerror = () => {
+                micBtn.style.backgroundColor = MIC_BUTTON_DEFAULT_COLOR; 
+                micBtn.textContent = '🎤';
+                systemMessageEl.textContent = "Voice error or timeout. Try again.";
+            };
+
+        } else {
+            micBtn.style.display = 'none';
+        }
+
+        // Initialization
+        setInterval(updateClock, 1000); 
+        updateLearningStatus();
+        renderHistory();
+    </script>
+</body>
+</html>
