@@ -3,9 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Aviator Analyser V6 | Historical Risk Assessment</title>
+    <title>Aviator Historical Analyser & Alert System</title>
     <style>
-        /* CSS YA UREMBO ULIOBORESHWA (Kama V4/V5) */
+        /* CSS YA UREMBO ULIOBORESHWA */
         body {
             font-family: 'Poppins', sans-serif;
             background-color: #000000;
@@ -83,14 +83,14 @@
         #micBtn:hover { background-color: #64B5F6; }
 
         #deleteLastRoundBtn {
-            background-color: #FF4500; 
+            background-color: #FF4500; /* OrangeRed */
             font-size: 14px;
             padding: 10px;
         }
         #deleteLastRoundBtn:hover { background-color: #FF6347; }
         
         #resetMistakesBtn {
-            background-color: #FFD700; 
+            background-color: #FFD700; /* Gold */
             color: #121212;
             font-size: 14px;
             padding: 10px;
@@ -114,6 +114,15 @@
             background-color: #1E1E1E;
             border-left: 5px solid #00FF7F;
         }
+        .zone-status {
+            font-size: 18px;
+            font-weight: bold;
+            text-align: center;
+            padding: 5px 0;
+        }
+        .zone-status.red { color: #FF4500; }
+        .zone-status.green { color: #00FF7F; }
+        .zone-status.orange { color: #FFD700; }
 
         /* ALERT AND RISK ASSESSMENT SECTION */
         #riskAssessment {
@@ -133,13 +142,13 @@
             text-align: center;
             font-weight: bold;
             font-size: 18px;
+            /* Kuondoa animations za kusumbua */
             transition: background-color 0.3s, color 0.3s; 
         }
         #alertBox.red-alert { background-color: #330000; color: #FF6666; border: 2px solid #FF0000; }
         #alertBox.green-alert { background-color: #003300; color: #66FF66; border: 2px solid #00FF00; }
         #alertBox.mixed-alert { background-color: #333300; color: #FFFF66; border: 2px solid #FFFF00; }
-        /* Rangi ya Jackpot Alert imeboreshwa kidogo */
-        #alertBox.jackpot-alert { background-color: #4B0082; color: #FFD700; border: 2px solid #FFD700; } 
+        #alertBox.jackpot-alert { background-color: #331A00; color: #FFC107; border: 2px solid #FFD700; }
         
         #historyLog {
             margin-top: 25px;
@@ -163,10 +172,6 @@
             padding: 4px 0;
             border-bottom: 1px dotted #333;
         }
-        .history-item span.red { color: #FF4500; }
-        .history-item span.green { color: #00FF7F; }
-        .history-item span.orange { color: #FFD700; }
-
         .disclaimer {
             font-size: 11px; 
             color: #555; 
@@ -177,7 +182,7 @@
 </head>
 <body>
     <div class="container">
-        <h1>📈 Aviator Analyser V6</h1>
+        <h1>📈 Aviator Analyser</h1>
 
         <div id="clockDisplay">--:--:--</div>
         
@@ -215,12 +220,13 @@
     </div>
 
     <script>
-        // --- GLOBAL CONSTANTS ---
-        const CYCLE_SECONDS = 720; 
-        const ERROR_THRESHOLD = 5.0; 
+        // --- GLOBAL CONSTANTS (UPDATED) ---
+        const CYCLE_SECONDS = 720; // 12 minutes * 60 seconds
+        const ERROR_THRESHOLD = 5.0; // Urekebisho wa 1: Kosa linahesabika tu ikiwa tofauti > 5.0x
         const MIN_ATTEMPTS_FOR_RESET = 30; 
-        const MISTAKE_PERCENTAGE_RESET = 0.50; 
+        const MISTAKE_PERCENTAGE_RESET = 0.50; // Urekebisho wa 2: Kujisafisha kunahitaji makosa > 50%
         
+        // Jackpot Tiers (Urekebisho wa 2)
         const JACKPOT_TIERS = [
             { threshold: 200.00, name: 'Mega Jackpot' },
             { threshold: 100.00, name: 'Grand Jackpot' },
@@ -244,7 +250,7 @@
         const riskAssessmentEl = document.getElementById('riskAssessment');
         const alertBoxEl = document.getElementById('alertBox');
         const deleteLastRoundBtn = document.getElementById('deleteLastRoundBtn');
-        const resetMistakesBtn = document.getElementById('resetMistakesBtn'); 
+        const resetMistakesBtn = document.getElementById('resetMistakesBtn'); // Kitufe Kipya
 
 
         // --- UTILITY FUNCTIONS ---
@@ -286,6 +292,7 @@
         }
 
         function resetSystem() {
+            // Hufuta Data zote (History & Stats)
             localStorage.removeItem('aviator_attempts');
             localStorage.removeItem('aviator_mistakes');
             localStorage.removeItem('aviator_history');
@@ -304,6 +311,7 @@
         }
 
         function resetMistakesOnly() {
+            // Hufuta Makosa tu (Mistakes only)
             localStorage.removeItem('aviator_mistakes');
             mistakes = 0;
 
@@ -326,9 +334,8 @@
 
         function updateLearningStatus() {
             const errorPercent = attempts > 0 ? ((mistakes / attempts) * 100).toFixed(1) : 0;
-            // Kufupisha Learning Status
             learningStatusEl.textContent = 
-                `Kuingiza: ${attempts} | Makosa: ${mistakes} (${errorPercent}%)`;
+                `Tasks Logged: ${attempts} | Errors Recorded: ${mistakes} (${errorPercent}%)`;
             
             checkForAutoReset(); 
         }
@@ -346,16 +353,16 @@
         function renderHistory() {
             historyListEl.innerHTML = history.map(item => {
                 const zoneClass = getZoneClass(parseFloat(item.actual));
-                // Rudi kwenye muonekano kamili (Time + Cycle Time) kwa urahisi wa kufuatilia
                 return `<div class="history-item">
                     [${item.time} / ${item.cycleTime}] A: <span class="${zoneClass}">${item.actual}x (${item.zone})</span>
                 </div>`;
             }).join('');
 
+            // Hide/Show delete button based on history length
             deleteLastRoundBtn.style.display = history.length > 0 ? 'block' : 'none';
         }
 
-        // --- ALERT LOGIC ---
+        // --- NEW ALERT LOGIC ---
 
         function getZoneKey(multiplier) {
             if (multiplier >= 10.00) return 'Orange';
@@ -365,27 +372,11 @@
         }
 
         function checkHistoryForAlerts() {
-            if (history.length < 1) { 
+            if (history.length < 2) {
                 alertBoxEl.className = '';
                 return;
             }
 
-            const lastRoundActual = parseFloat(history[0].actual);
-
-            // Jackpot Alert ya Haraka
-            if (lastRoundActual >= 10.00) {
-                const jackpotName = JACKPOT_TIERS.find(t => lastRoundActual >= t.threshold)?.name || 'Jackpot Kubwa';
-                alertBoxEl.className = 'jackpot-alert';
-                alertBoxEl.textContent = `👑 TAHADHARI: ${jackpotName} ${lastRoundActual.toFixed(2)}x IMETOKEZA! Soko Lipo HOT!`;
-                return;
-            }
-
-            // Endelea na Streak Alerts (Inahitaji raundi 2)
-            if (history.length < 2) {
-                 alertBoxEl.className = '';
-                 return;
-            }
-            
             const lastTwoZones = history.slice(0, 2).map(item => getZoneKey(parseFloat(item.actual)));
 
             // Green Streak Alert
@@ -409,16 +400,18 @@
                 return;
             }
             
+            // Ikiwa hakuna alert, ondoa tu classes.
             alertBoxEl.className = '';
         }
 
 
-        // Multi-Jackpot Analysis (Risk Assessment)
+        // Multi-Jackpot Analysis (Urekebisho wa 2)
         function assessRiskByTime(currentCycleSecond) {
             const windowSize = 60; 
             let redCount = 0;
             let totalCount = 0;
             
+            // Object ya kuhesabu Jackpots zote
             let jackpotCounts = {};
             JACKPOT_TIERS.forEach(tier => jackpotCounts[tier.threshold] = { count: 0, recent: false });
 
@@ -432,9 +425,13 @@
                     totalCount++;
                     if (actual < 2.00) redCount++;
                     
+                    // Hesabu Jackpot zote
                     JACKPOT_TIERS.forEach(tier => {
                         if (actual >= tier.threshold) {
                             jackpotCounts[tier.threshold].count++;
+                            if (diff <= 30) { // Recent hit within 30 seconds of this cycle time
+                                jackpotCounts[tier.threshold].recent = true;
+                            }
                         }
                     });
                 }
@@ -451,20 +448,24 @@
                 let jackpotAlerts = [];
                 let isJackpotTime = false;
 
+                // Anza na Jackpot kubwa
                 JACKPOT_TIERS.sort((a, b) => b.threshold - a.threshold).forEach(tier => {
                     const tierData = jackpotCounts[tier.threshold];
                     const tierPercent = (tierData.count / totalCount) * 100;
 
                     if (tierPercent >= 5 && tierData.count >= 2) {
+                         // Tahadhari inakuwa muhimu sana
                         jackpotAlerts.push(`${tier.name} (${tier.threshold.toFixed(2)}x)`);
                         isJackpotTime = true;
                     }
                 });
                 
+                // Panga Jackpot Alert
                 if (isJackpotTime) {
                     message = `👑 JACKPOT INAWEZEKANA: ${jackpotAlerts.join(', ')} Inakaribia katika muda huu!`;
-                    riskAssessmentEl.style.backgroundColor = '#4B0082'; 
+                    riskAssessmentEl.style.backgroundColor = '#4B0082'; // Indigo/Deep Purple
                 }
+                // Panga Red/Normal Alert
                 else if (redPercent > 60) {
                     message = `🚨 HATARI KUBWA! ${redPercent.toFixed(0)}% ya raundi zimefungwa chini ya 2.00x.`;
                     riskAssessmentEl.style.backgroundColor = '#E57373'; 
@@ -532,12 +533,15 @@
 
             const lastRoundEntry = history.length > 0 ? history[0].actual : '1.00'; 
             
+            // 1. Fanya Logic ya Kujifunza 
             attempts++;
             
+            // Makosa yanahesabiwa tu ikiwa kuna mabadiliko makubwa sana kutoka kwenye raundi iliyopita.
             if (Math.abs(actual - parseFloat(lastRoundEntry)) > ERROR_THRESHOLD) { 
                 mistakes++;
             }
 
+            // 2. Hifadhi Historia
             const historyEntry = {
                 time: formatTime(new Date()),
                 cycleTime: getCycleTimeDisplay(getCurrentCycleSeconds()),
@@ -547,10 +551,11 @@
             };
             updateHistory(historyEntry);
 
+            // 3. Hifadhi data za kujifunza
             localStorage.setItem('aviator_attempts', attempts);
             localStorage.setItem('aviator_mistakes', mistakes);
 
-            roundInput.value = ''; 
+            roundInput.value = ''; // Safisha input
             alertBoxEl.className = 'green-alert';
             alertBoxEl.textContent = "Kujifunza Kumekamilika! Endelea kuingiza raundi...";
         });
@@ -558,9 +563,10 @@
         // 6. Kazi ya Kufuta Raundi ya Mwisho (Kurekebisha Kosa la Data)
         deleteLastRoundBtn.addEventListener('click', () => {
             if (history.length > 0) {
-                const deletedEntry = history.shift(); 
+                const deletedEntry = history.shift(); // Remove the first item
                 localStorage.setItem('aviator_history', JSON.stringify(history));
 
+                // Rudi nyuma kwa attempts (na mistakes)
                 attempts = Math.max(0, attempts - 1);
                 localStorage.setItem('aviator_attempts', attempts);
                 
@@ -574,7 +580,7 @@
             }
         });
 
-        // Kazi ya Kufuta Makosa tu
+        // Kazi ya 1: Kitufe cha Kufuta Makosa tu
         resetMistakesBtn.addEventListener('click', resetMistakesOnly);
 
         // Initialization
