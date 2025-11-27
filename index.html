@@ -3,9 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Aviator Prediction Simulator (Live Time Learning)</title>
+    <title>Aviator Prediction Simulator (Live Time Auto-Reset)</title>
     <style>
-        /* CSS INAANZA HAPA - DESIGN BORA */
+        /* CSS YA UREMBO */
         body {
             font-family: 'Arial', sans-serif;
             background-color: #0d0d0d;
@@ -125,6 +125,15 @@
             text-align: center;
             font-size: 16px;
         }
+        #resetWarning {
+            background-color: #FF0000;
+            color: white;
+            padding: 10px;
+            border-radius: 8px;
+            margin-top: 10px;
+            text-align: center;
+            display: none; /* Hide by default */
+        }
 
         #historyLog {
             margin-top: 25px;
@@ -164,6 +173,9 @@
         
         <button id="mainButton">1. Tabiri Mzunguko Unaofuata</button>
         
+        <div id="resetWarning">
+            🚨 Kujifunza Hakufai: Mfumo umefuta data na kuanza upya!
+        </div>
 
         <div id="results" class="result-box">
             <div id="riskAssessment">Inachambua hatari...</div>
@@ -185,12 +197,15 @@
 
     <script>
         // --- GLOBAL VARIABLES ---
+        const CYCLE_SECONDS = 720; // 12 minutes * 60 seconds
+        const ERROR_THRESHOLD = 2.0; // Kizingiti cha Kosa: Kurudishwa kwenye 2.0 (Kama ulivyoomba)
+        const MIN_ATTEMPTS_FOR_RESET = 30; // Raundi chache kabla ya kuanza kuangalia reset (Kama ulivyoomba)
+        const MISTAKE_PERCENTAGE_RESET = 0.35; // Futa data ikiwa Makosa > 35% ya Attempts (Kama ulivyoomba)
+        
         let attempts = parseInt(localStorage.getItem('aviator_attempts') || 0);
         let mistakes = parseInt(localStorage.getItem('aviator_mistakes') || 0);
         let lastPredicted = null; 
-        let isPredictionMode = true; // State: true = Predict, false = Learn/Log
-
-        const CYCLE_SECONDS = 720; // 12 minutes * 60 seconds
+        let isPredictionMode = true; 
         let history = JSON.parse(localStorage.getItem('aviator_history') || '[]');
         
         const MIC_BUTTON_DEFAULT_COLOR = '#2196F3'; 
@@ -206,13 +221,43 @@
         const learningStatusEl = document.getElementById('learningStatus');
         const historyListEl = document.getElementById('historyList');
         const riskAssessmentEl = document.getElementById('riskAssessment');
+        const resetWarningEl = document.getElementById('resetWarning');
 
+        // --- CORE FUNCTIONS ---
 
-        // --- UTILITY FUNCTIONS ---
-        function updateLearningStatus() {
-            learningStatusEl.textContent = 
-                `Majukumu ya Utabiri: ${attempts} | Makosa (Simulated): ${mistakes} | Makosa yanaathiri utabiri ujao.`;
+        function resetSystem() {
+            localStorage.removeItem('aviator_attempts');
+            localStorage.removeItem('aviator_mistakes');
+            localStorage.removeItem('aviator_history');
+            attempts = 0;
+            mistakes = 0;
+            history = [];
+            
+            updateLearningStatus();
+            renderHistory();
+            resetWarningEl.style.display = 'block';
+            setTimeout(() => { resetWarningEl.style.display = 'none'; }, 5000); // Ficha baada ya sekunde 5
         }
+
+        function checkForAutoReset() {
+            if (attempts > MIN_ATTEMPTS_FOR_RESET) {
+                if (mistakes / attempts > MISTAKE_PERCENTAGE_RESET) {
+                    // console.warn(`AUTO-RESET: Makosa (${mistakes}/${attempts}) yamezidi ${MISTAKE_PERCENTAGE_RESET * 100}%. Inaanza upya.`);
+                    resetSystem();
+                }
+            }
+        }
+
+        function updateLearningStatus() {
+            const errorPercent = attempts > 0 ? ((mistakes / attempts) * 100).toFixed(1) : 0;
+            learningStatusEl.textContent = 
+                `Forecast Tasks: ${attempts} | Errors: ${mistakes} (${errorPercent}%) | Makosa yanaathiri utabiri ujao.`;
+            
+            // Angalia uwezekano wa kufanya Auto-Reset kila utabiri.
+            checkForAutoReset(); 
+        }
+
+        // ... (Kazi zingine za getZone, formatTime, n.k. zimeachwa vilevile)
 
         function getZone(multiplier) {
             if (multiplier >= 10.00) return 'Orange Zone (Jackpot)';
@@ -227,9 +272,8 @@
             return 'red';
         }
         
-        // --- NEW TIME LOGIC ---
         function formatTime(date) {
-            return date.toTimeString().split(' ')[0]; // HH:MM:SS
+            return date.toTimeString().split(' ')[0];
         }
 
         function getCurrentCycleSeconds() {
@@ -247,16 +291,12 @@
         function updateClock() {
             const now = new Date();
             clockDisplay.textContent = formatTime(now);
-            
-            // Simulates round cycle by tracking time modulo 12 minutes
             assessRiskByTime(getCurrentCycleSeconds()); 
         }
-        // --- END NEW TIME LOGIC ---
-
 
         function updateHistory(newRound) {
-            history.unshift(newRound); // Add to the start
-            if (history.length > 50) { // Store more for better learning
+            history.unshift(newRound);
+            if (history.length > 50) { 
                 history.pop(); 
             }
             localStorage.setItem('aviator_history', JSON.stringify(history));
@@ -272,20 +312,16 @@
             }).join('');
         }
 
-        // --- NEW RISK ASSESSMENT FUNCTION ---
         function assessRiskByTime(currentCycleSecond) {
-            // Window of +/- 60 seconds (1 minute total)
             const windowSize = 60; 
             let redCount = 0;
             let orangeCount = 0;
             let totalCount = 0;
 
             for (const item of history) {
-                // Calculate difference in seconds, wrapping around the 720-second cycle
                 const itemCycleSecond = parseInt(item.cycleSecond);
                 let diff = Math.abs(currentCycleSecond - itemCycleSecond);
                 
-                // Handle wrap-around (e.g., 710s and 10s are close)
                 if (diff > CYCLE_SECONDS / 2) {
                     diff = CYCLE_SECONDS - diff;
                 }
@@ -299,27 +335,27 @@
             
             let message = '';
             
-            if (totalCount === 0) {
+            if (totalCount < 5) { 
                 message = `Chukua tahadhari: Historia bado haitoshi katika muda huu (${getCycleTimeDisplay(currentCycleSecond)}).`;
+                riskAssessmentEl.style.backgroundColor = '#555';
             } else {
                 const redPercent = (redCount / totalCount) * 100;
                 const orangePercent = (orangeCount / totalCount) * 100;
 
                 if (redPercent > 60) {
                     message = `🚨 HATARI KUBWA! ${redPercent.toFixed(0)}% ya raundi zilizopita katika muda huu zimefungwa chini ya 2.00x.`;
-                    riskAssessmentEl.style.backgroundColor = '#E57373';
+                    riskAssessmentEl.style.backgroundColor = '#E57373'; 
                 } else if (orangePercent > 10) {
                     message = `💰 JACKPOT INAKUJA? ${orangePercent.toFixed(0)}% ya raundi zimefika 10.00x+ katika muda huu.`;
-                    riskAssessmentEl.style.backgroundColor = '#4CAF50';
+                    riskAssessmentEl.style.backgroundColor = '#4CAF50'; 
                 } else {
                     message = `🟢 HALI YA KAWAIDA. Hatari ni ndogo kwa sasa.`;
-                    riskAssessmentEl.style.backgroundColor = '#333';
+                    riskAssessmentEl.style.backgroundColor = '#333'; 
                 }
             }
             riskAssessmentEl.textContent = message;
         }
 
-        // --- GAME LOGIC ---
         function predictMultiplier(last) {
             const errorFactor = 1 + (mistakes / 50); 
             let prediction;
@@ -420,7 +456,8 @@
 
                 // 1. Fanya Logic ya Kujifunza
                 attempts++;
-                if (Math.abs(predicted - actual) > 2.0) { 
+                // Kurudisha kizingiti cha kosa kwenye 2.0x (ERROR_THRESHOLD = 2.0)
+                if (Math.abs(predicted - actual) > ERROR_THRESHOLD) { 
                     mistakes++;
                 }
 
@@ -451,10 +488,10 @@
         });
 
         // Initialization
-        setInterval(updateClock, 1000); // Update clock every second
+        setInterval(updateClock, 1000); 
         updateLearningStatus();
         renderHistory();
-        assessRiskByTime(getCurrentCycleSeconds()); // Initial risk check
+        // Huita assessRiskByTime ndani ya updateClock kila sekunde
     </script>
 </body>
 </html>
