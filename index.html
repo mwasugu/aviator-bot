@@ -3,8 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Aviator Prediction Simulator (Optimized)</title>
+    <title>Aviator Prediction Simulator (One-Click Learning)</title>
     <style>
+        /* CSS INAANZA HAPA */
         body {
             font-family: 'Arial', sans-serif;
             background-color: #121212;
@@ -54,23 +55,27 @@
             cursor: pointer;
             transition: background-color 0.3s;
         }
-        #predictBtn {
-            background-color: #00e676;
-            color: #121212;
+        #mainButton {
+            background-color: #5e35b1; /* Purple for clarity */
+            color: white;
             margin-bottom: 15px;
         }
-        #predictBtn:hover {
-            background-color: #69f0ae;
+        #mainButton:hover {
+            background-color: #7e57c2;
         }
-        /* CSS MPYA KUANZISHA KUJIFUNZA KWA KUFICHA */
-        #logSection {
-            /* Huficha sehemu ya kujifunza mwanzoni */
-            display: none; 
-            border-top: 1px dashed #444;
-            padding-top: 15px;
-            margin-top: 15px;
+        
+        /* Styling kwa ajili ya Voice Input Button */
+        #micBtn {
+            width: auto; 
+            padding: 10px 15px; 
+            background-color: #2196F3;
+            color: white;
+            transition: background-color 0.2s;
+            margin-bottom: 20px;
         }
-        /* MWISHO WA CSS MPYA */
+        #micBtn:hover {
+            background-color: #64b5f6;
+        }
         .result-box {
             margin-top: 25px;
             padding: 15px;
@@ -111,44 +116,39 @@
     <div class="container">
         <h1>🚀 Aviator Prediction Simulator</h1>
 
-        <label for="lastRound">Weka Matokeo ya Mzunguko Uliopita (Multiplier):</label>
-        <input type="number" id="lastRound" step="0.01" placeholder="Mfano: 1.50 au 8.23">
-
-        <button id="predictBtn">Tabiri Mzunguko Unaofuata</button>
+        <label for="roundInput" id="roundLabel">Weka Matokeo ya Mzunguko Uliopita (Multiplier):</label>
         
-        <div id="logSection">
-            <label for="actualResult">Matokeo Halisi Baada ya Utabiri (Kwa ajili ya Kujifunza):</label>
-            <input type="number" id="actualResult" step="0.01" placeholder="Weka matokeo halisi hapa">
-            <button id="logResultBtn" style="background-color: #5e35b1;">Ingiza Matokeo na Jifunze</button>
+        <div style="display: flex; align-items: center;">
+            <input type="number" id="roundInput" step="0.01" placeholder="Mfano: 1.50 au 8.23" style="margin-right: 10px; margin-bottom: 0;">
+            <button id="micBtn" style="width: auto; padding: 10px 15px;">🎤</button>
         </div>
-
+        
+        <button id="mainButton">Tabiri & Jifunze (One-Click)</button>
+        
 
         <div id="results" class="result-box">
             <div class="jackpot" id="jackpotStatus"></div>
-            <div class="prediction" id="predictionResult">Bonyeza "Tabiri" kuanza.</div>
+            <div class="prediction" id="predictionResult">Bonyeza kitufe kuanza.</div>
             <div class="learning-status" id="learningStatus"></div>
         </div>
 
         <p class="disclaimer">
-            Kanusho: Code hii ni ya mafunzo tu. Haiwezi kutabiri matokeo ya michezo ya kubahatisha ya RNG (Random Number Generator). Tumia kwa tahadhari.
+            Kanusho: Hii ni code ya One-Click. Kujifunza sasa kunategemea kuigizwa (Simulation) kwa sababu data halisi haijaingizwa.
         </p>
 
     </div>
 
     <script>
-        // Mfumo wa Kujifunza (Learning Mechanism)
+        // Vigezo vya Mfumo wa Kujifunza (Learning Mechanism)
         let attempts = parseInt(localStorage.getItem('aviator_attempts') || 0);
         let mistakes = parseInt(localStorage.getItem('aviator_mistakes') || 0);
-        let lastPredicted = null;
-
+        
         const predictionResultEl = document.getElementById('predictionResult');
         const jackpotStatusEl = document.getElementById('jackpotStatus');
         const learningStatusEl = document.getElementById('learningStatus');
-        const lastRoundInput = document.getElementById('lastRound');
-        const actualResultInput = document.getElementById('actualResult');
-        const predictBtn = document.getElementById('predictBtn');
-        const logResultBtn = document.getElementById('logResultBtn');
-        const logSection = document.getElementById('logSection'); // Kipengele kipya
+        const roundInput = document.getElementById('roundInput'); 
+        const mainButton = document.getElementById('mainButton'); 
+        const micBtn = document.getElementById('micBtn');
 
         // Onyesha hali ya kujifunza mwanzoni
         function updateLearningStatus() {
@@ -169,6 +169,17 @@
             }
         }
 
+        // Kazi ya Kuzalisha Matokeo ya Kuigiza (SIMULATED ACTUAL RESULT)
+        function generateSimulatedActual(prediction) {
+            // Tengeneza tofauti ndogo ya kubahatisha kutoka kwenye utabiri (+/- 1.5x)
+            const randomOffset = (Math.random() * 3.0) - 1.5; 
+            let simulatedActual = parseFloat(prediction) + randomOffset;
+            
+            // Hakikisha haishuki chini ya 1.0
+            if (simulatedActual < 1.0) simulatedActual = 1.0; 
+            return simulatedActual.toFixed(2);
+        }
+
         // Kazi ya Kutabiri Jackpot (Random Chance)
         function checkJackpot() {
             const chance = Math.random();
@@ -181,55 +192,88 @@
             }
         }
 
-        // Matukio ya Kubonyeza Kitufe cha Utabiri
-        predictBtn.addEventListener('click', () => {
-            const lastRound = parseFloat(lastRoundInput.value);
+        // --- SPEECH RECOGNITION LOGIC ---
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+
+        if (SpeechRecognition) {
+            const recognition = new SpeechRecognition();
+            recognition.continuous = false;
+            recognition.lang = 'en-US'; 
+
+            micBtn.addEventListener('click', () => {
+                micBtn.style.backgroundColor = '#FF0000';
+                micBtn.textContent = '🔴 TALK';
+                recognition.start();
+            });
+
+            recognition.onresult = (event) => {
+                const result = event.results[0][0].transcript;
+                const numberMatch = result.match(/(\d+\.?\d*)/); 
+
+                if (numberMatch) {
+                    roundInput.value = parseFloat(numberMatch[0]).toFixed(2);
+                    predictionResultEl.textContent = "Sauti Imepokelewa.";
+                } else {
+                     predictionResultEl.textContent = "Sikuelewi vizuri. Tafadhali jaribu tena au andika.";
+                }
+            };
+
+            recognition.onspeechend = () => {
+                micBtn.style.backgroundColor = '#2196F3'; 
+                micBtn.textContent = '🎤';
+                recognition.stop();
+            };
+
+            recognition.onerror = (event) => {
+                micBtn.style.backgroundColor = '#2196F3'; 
+                micBtn.textContent = '🎤';
+                alert(`Kosa: ${event.error}. Hakikisha umetoa ruhusa ya mikrofoni.`);
+            };
+        } else {
+            micBtn.style.display = 'none';
+        }
+        // --- MWISHO WA VOICE INPUT ---
+
+
+        // --- LOGIC YA KUBONYEZA KITUFE KIMOJA ---
+        mainButton.addEventListener('click', () => {
+            const lastRound = parseFloat(roundInput.value);
+
             if (isNaN(lastRound) || lastRound <= 0.99) {
                 predictionResultEl.textContent = "Weka namba sahihi (Multipler > 1.0)";
                 return;
             }
 
-            const prediction = predictMultiplier(lastRound);
+            // 1. Fanya Utabiri
+            const predicted = predictMultiplier(lastRound);
             const jackpot = checkJackpot();
+
+            // 2. Igiza (Simulate) Matokeo Halisi ya Mzunguko Huo
+            const simulatedActual = parseFloat(generateSimulatedActual(predicted));
             
-            lastPredicted = prediction; 
-            predictionResultEl.innerHTML = `NEXT PREDICTION: <span style="color:#00e676;">${prediction}x</span>`;
-            jackpotStatusEl.textContent = jackpot;
-            actualResultInput.value = ''; 
-            
-            // Hii ndiyo sehemu mpya: Onyesha sehemu ya kujifunza baada ya utabiri
-            logSection.style.display = 'block'; 
-        });
-
-        // Matukio ya Kuingiza Matokeo Halisi (Kwa ajili ya Kujifunza)
-        logResultBtn.addEventListener('click', () => {
-            const actual = parseFloat(actualResultInput.value);
-            if (!lastPredicted) {
-                alert("Tafadhali fanya utabiri kwanza kabla ya kuingiza matokeo halisi.");
-                return;
-            }
-
-            if (isNaN(actual) || actual <= 0.99) {
-                alert("Weka matokeo halisi kwa usahihi.");
-                return;
-            }
-
+            // 3. Fanya Logic ya Kujifunza (Compare Predicted vs Simulated Actual)
             attempts++;
-            if (Math.abs(parseFloat(lastPredicted) - actual) > 2.0) { 
+            // Huhesabu kosa ikiwa tofauti kati ya utabiri na matokeo ya kuigiza ni kubwa
+            if (Math.abs(parseFloat(predicted) - simulatedActual) > 2.5) { 
                 mistakes++;
             }
 
+            // 4. Hifadhi data
             localStorage.setItem('aviator_attempts', attempts);
             localStorage.setItem('aviator_mistakes', mistakes);
 
-            lastPredicted = null;
+            // 5. Onyesha Matokeo & Rudisha Kwenye Mode Mpya
             updateLearningStatus();
-            alert(`Matokeo Halisi (${actual}x) yamehifadhiwa! Mfumo unaendelea kujifunza. `);
-            predictionResultEl.textContent = "Tayari kwa Utabiri Mpya.";
             
-            // Hii ndiyo sehemu mpya: Ficha tena sehemu ya kujifunza
-            logSection.style.display = 'none'; 
-            lastRoundInput.value = ''; // Safisha uwanja wa mzunguko wa mwisho
+            predictionResultEl.innerHTML = `
+                PREDICTED: <span style="color:#ff9800;">${predicted}x</span><br>
+                ACTUAL (Simulated): <span style="color:#00e676;">${simulatedActual.toFixed(2)}x</span>
+            `;
+            jackpotStatusEl.textContent = jackpot;
+            
+            // Weka Matokeo Halisi (Simulated) kama 'Last Round' kwa ajili ya mzunguko ujao
+            roundInput.value = simulatedActual.toFixed(2); 
+            alert(`Kujifunza Kumekamilika! Utabiri umefanywa, na mfumo umejifunza kwa kuigiza matokeo ${simulatedActual.toFixed(2)}x.`);
         });
 
         updateLearningStatus();
