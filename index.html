@@ -1,11 +1,11 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="sw">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Aviator Learning Log & Data Control with Risk Assessment</title>
+    <title>Aviator Prediction Simulator (Live Time Learning)</title>
     <style>
-        /* CSS STYLES (UNCHANGED) */
+        /* CSS INAANZA HAPA - DESIGN BORA */
         body {
             font-family: 'Arial', sans-serif;
             background-color: #0d0d0d;
@@ -36,7 +36,6 @@
             font-weight: bold;
             color: #bdbdbd;
         }
-        /* Adjusted input styling */
         input[type="number"] {
             width: calc(100% - 22px);
             padding: 12px;
@@ -46,78 +45,74 @@
             background-color: #2c2c2c;
             color: #fff;
             font-size: 18px;
-            /* Optional: Hide cursor on some platforms for 'readonly' feel */
-            caret-color: transparent; 
         }
         button {
             width: 100%;
             padding: 14px;
             border: none;
             border-radius: 8px;
-            font-size: 16px;
+            font-size: 18px;
             font-weight: bold;
             cursor: pointer;
             transition: background-color 0.3s, transform 0.1s;
-            margin-bottom: 10px;
         }
         button:active {
             transform: scale(0.98);
         }
 
-        /* BUTTON STYLES */
-        #logButton {
-            background-color: #4CAF50;
+        /* MAIN BUTTON STYLES (Dynamic) */
+        #mainButton {
+            background-color: #4CAF50; /* Green for Predict */
             color: #1a1a1a;
-            font-size: 18px;
-            margin-bottom: 20px;
+            margin-bottom: 15px;
         }
-        #logButton:hover { background-color: #81C784; }
-
-        #undoButton {
-            background-color: #FF9800;
+        #mainButton.learn-mode {
+            background-color: #FF9800; /* Orange for Learn */
             color: #1a1a1a;
         }
-        #undoButton:hover { background-color: #FFB74D; }
-
-        #resetButton {
-            background-color: #E57373;
-            color: white;
-        }
-        #resetButton:hover { background-color: #EF9A9A; }
-
+        #mainButton:hover { background-color: #81C784; }
+        #mainButton.learn-mode:hover { background-color: #FFB74D; }
+        
+        /* VOICE INPUT & CLOCK STYLES */
         #micBtn {
             width: auto; 
-            padding: 12px 15px; 
+            padding: 10px 15px; 
             background-color: #2196F3;
             color: white;
-            margin-bottom: 0;
-            margin-left: 10px; 
+            margin-bottom: 20px;
         }
-        
         #clockDisplay {
             text-align: center;
             font-size: 36px;
             font-weight: bold;
-            color: #E57373; 
+            color: #E57373; /* Red for timer */
             margin-bottom: 20px;
             padding: 10px 0;
             border-bottom: 2px solid #333;
         }
-        
         .result-box {
-            margin-top: 10px;
+            margin-top: 20px;
             padding: 15px;
             border-radius: 10px;
             background-color: #2c2c2c;
             border-left: 5px solid #4CAF50;
         }
-        .message {
-            font-size: 18px;
+        .prediction {
+            font-size: 28px;
             font-weight: bold;
             color: #FFC107;
             margin: 10px 0;
             text-align: center;
         }
+        .zone-status {
+            font-size: 18px;
+            font-weight: bold;
+            text-align: center;
+            padding: 5px 0;
+        }
+        .zone-status.red { color: #E57373; }
+        .zone-status.green { color: #8BC34A; }
+        .zone-status.orange { color: #FF9800; }
 
         /* RISK ASSESSMENT SECTION */
         #riskAssessment {
@@ -125,22 +120,10 @@
             color: #fff;
             padding: 10px;
             border-radius: 8px;
-            margin-top: 5px;
-            margin-bottom: 15px;
+            margin-top: 15px;
             font-weight: bold;
             text-align: center;
             font-size: 16px;
-        }
-
-        /* Learning Status/Error Display */
-        #learningStatusTop {
-            font-size: 14px;
-            color: #bdbdbd;
-            text-align: center;
-            margin: 15px 0 10px 0;
-            padding: 8px 0;
-            border-top: 1px dotted #444;
-            border-bottom: 1px dotted #444;
         }
 
         #historyLog {
@@ -148,7 +131,7 @@
             padding: 15px;
             border-radius: 10px;
             background-color: #1f1f1f;
-            max-height: 250px;
+            max-height: 150px;
             overflow-y: auto;
             border: 1px solid #333;
         }
@@ -164,130 +147,72 @@
             padding: 4px 0;
             border-bottom: 1px dotted #333;
         }
-        .zone-status.red { color: #E57373; }
-        .zone-status.green { color: #8BC34A; }
-        .zone-status.orange { color: #FF9800; }
-
-        /* TOGGLE SWITCH STYLES */
-        .toggle-container {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            background-color: #2c2c2c;
-            padding: 8px 15px;
-            border-radius: 8px;
-            margin-bottom: 15px;
-            font-size: 14px;
-        }
-        .switch {
-          position: relative;
-          display: inline-block;
-          width: 45px;
-          height: 25px;
-        }
-        .switch input {opacity: 0; width: 0; height: 0;}
-        .slider {
-          position: absolute;
-          cursor: pointer;
-          top: 0;
-          left: 0;
-          right: 0;
-          bottom: 0;
-          background-color: #ccc;
-          transition: .4s;
-          border-radius: 34px;
-        }
-        .slider:before {
-          position: absolute;
-          content: "";
-          height: 17px;
-          width: 17px;
-          left: 4px;
-          bottom: 4px;
-          background-color: white;
-          transition: .4s;
-          border-radius: 50%;
-        }
-        input:checked + .slider {
-          background-color: #4CAF50;
-        }
-        input:checked + .slider:before {
-          transform: translateX(20px);
-        }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>📊 Aviator Learning Log</h1>
+        <h1>🎰 Aviator Predictor</h1>
 
         <div id="clockDisplay">--:--:--</div>
         
-        <label for="roundInput" id="roundLabel">Enter Round Multiplier (Actual Result):</label>
+        <label for="roundInput" id="roundLabel">1. Weka Matokeo ya Mzunguko Uliopita (Multiplier):</label>
         
         <div style="display: flex; align-items: center;">
-            <input type="number" id="roundInput" step="0.01" placeholder="Example: 1.50 or 8.23" style="margin-bottom: 0;" inputmode="none" onfocus="this.blur()">
-            <button id="micBtn" style="width: auto; padding: 12px 15px; margin-bottom: 0;">🎤</button>
-        </div>
-
-        <div class="toggle-container">
-            <span>Voice Auto-Log (ON/OFF):</span>
-            <label class="switch">
-              <input type="checkbox" id="autoLogToggle" checked>
-              <span class="slider"></span>
-            </label>
+            <input type="number" id="roundInput" step="0.01" placeholder="Mfano: 1.50 au 8.23" style="margin-right: 10px; margin-bottom: 0;">
+            <button id="micBtn" style="width: auto; padding: 10px 15px;">🎤</button>
         </div>
         
-        <button id="logButton">LOG ROUND RESULT</button>
+        <button id="mainButton">1. Tabiri Mzunguko Unaofuata</button>
+        
 
         <div id="results" class="result-box">
-            <div id="riskAssessment">Analyzing Risk...</div>
-            <div class="message" id="systemMessage">Enter the first round result.</div>
-        </div>
-        
-        <div id="learningStatusTop"></div>
-
-        <div id="controlButtons" style="display: flex; gap: 10px; margin-top: 10px;">
-            <button id="undoButton" style="width: 50%;">UNDO Last Round</button>
-            <button id="resetButton" style="width: 50%;">RESET All Data</button>
+            <div id="riskAssessment">Inachambua hatari...</div>
+            <div class="zone-status" id="zoneStatus"></div>
+            <div class="prediction" id="predictionResult">Bonyeza "Tabiri" kuanza.</div>
+            <div class="learning-status" id="learningStatus"></div>
         </div>
 
         <div id="historyLog">
-            <h3>Round History:</h3>
+            <h3>Historia ya Raundi Zilizopita (Last Rounds):</h3>
             <div id="historyList"></div>
         </div>
         
         <p class="disclaimer" style="font-size: 12px; color: #9e9e9e; text-align: center; margin-top: 20px;">
-            This tool records your history for analysis. Risk is based only on your logged data.
+            Kanusho: Mfumo huu unajifunza kwa Historia yako uliyoweka. Hawezi kutabiri mchezo wa RNG.
         </p>
 
     </div>
 
     <script>
         // --- GLOBAL VARIABLES ---
-        const CYCLE_SECONDS = 720; 
-        const TIME_WINDOW_FOR_LEARNING = 90; 
-        
-        let totalRounds = parseInt(localStorage.getItem('aviator_totalRounds') || 0);
-        let errors = parseInt(localStorage.getItem('aviator_errors') || 0); 
-        let attempts = parseInt(localStorage.getItem('aviator_attempts') || 0); 
+        let attempts = parseInt(localStorage.getItem('aviator_attempts') || 0);
+        let mistakes = parseInt(localStorage.getItem('aviator_mistakes') || 0);
+        let lastPredicted = null; 
+        let isPredictionMode = true; // State: true = Predict, false = Learn/Log
+
+        const CYCLE_SECONDS = 720; // 12 minutes * 60 seconds
         let history = JSON.parse(localStorage.getItem('aviator_history') || '[]');
         
+        const MIC_BUTTON_DEFAULT_COLOR = '#2196F3'; 
+        const MIC_BUTTON_RECORDING_COLOR = '#FF0000'; 
+        
         const roundInput = document.getElementById('roundInput'); 
-        const logButton = document.getElementById('logButton'); 
-        const undoButton = document.getElementById('undoButton');
-        const resetButton = document.getElementById('resetButton');
-        const micBtn = document.getElementById('micBtn'); 
-        const autoLogToggle = document.getElementById('autoLogToggle'); 
+        const roundLabel = document.getElementById('roundLabel'); 
+        const mainButton = document.getElementById('mainButton'); 
+        const micBtn = document.getElementById('micBtn');
         const clockDisplay = document.getElementById('clockDisplay');
-        const systemMessageEl = document.getElementById('systemMessage');
-        const learningStatusTopEl = document.getElementById('learningStatusTop');
+        const predictionResultEl = document.getElementById('predictionResult');
+        const zoneStatusEl = document.getElementById('zoneStatus');
+        const learningStatusEl = document.getElementById('learningStatus');
         const historyListEl = document.getElementById('historyList');
         const riskAssessmentEl = document.getElementById('riskAssessment');
 
-        const MIC_BUTTON_DEFAULT_COLOR = '#2196F3'; 
-        const MIC_BUTTON_RECORDING_COLOR = '#FF0000'; 
 
-        // --- CORE FUNCTIONS ---
+        // --- UTILITY FUNCTIONS ---
+        function updateLearningStatus() {
+            learningStatusEl.textContent = 
+                `Majukumu ya Utabiri: ${attempts} | Makosa (Simulated): ${mistakes} | Makosa yanaathiri utabiri ujao.`;
+        }
 
         function getZone(multiplier) {
             if (multiplier >= 10.00) return 'Orange Zone (Jackpot)';
@@ -302,199 +227,114 @@
             return 'red';
         }
         
+        // --- NEW TIME LOGIC ---
         function formatTime(date) {
-            return date.toTimeString().split(' ')[0];
+            return date.toTimeString().split(' ')[0]; // HH:MM:SS
         }
 
-        // --- Cycle Time Fixed Logic ---
         function getCurrentCycleSeconds() {
             const now = new Date();
-            // This retrieves the current time in seconds (0 to 86399)
-            return now.getHours() * 3600 + now.getMinutes() * 60 + now.getSeconds();
+            const totalSecondsOfDay = now.getHours() * 3600 + now.getMinutes() * 60 + now.getSeconds();
+            return totalSecondsOfDay % CYCLE_SECONDS; 
         }
 
         function getCycleTimeDisplay(cycleSeconds) {
-            // This logic is now redundant as we only show the real time (HH:MM:SS)
             const minutes = Math.floor(cycleSeconds / 60);
             const seconds = cycleSeconds % 60;
-            return `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+            return `Cycle: ${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
         }
         
         function updateClock() {
             const now = new Date();
-            // FIX: Display only the current time (HH:MM:SS) as requested
-            clockDisplay.textContent = formatTime(now); 
+            clockDisplay.textContent = formatTime(now);
             
-            // Still calculate and use cycleSeconds for Risk Assessment only
-            const totalSecondsOfDay = now.getHours() * 3600 + now.getMinutes() * 60 + now.getSeconds();
-            const cycleSeconds = totalSecondsOfDay % CYCLE_SECONDS;
-            assessRiskByTime(cycleSeconds); 
+            // Simulates round cycle by tracking time modulo 12 minutes
+            assessRiskByTime(getCurrentCycleSeconds()); 
         }
+        // --- END NEW TIME LOGIC ---
 
-        function updateLearningStatus() {
-            const errorPercent = attempts > 0 ? ((errors / attempts) * 100).toFixed(1) : 0;
-            
-            learningStatusTopEl.innerHTML = 
-                `Total Rounds Logged: **${totalRounds}** | Data Correction Attempts: **${attempts}** | Logged Errors (UNDO): **${errors}** (${errorPercent}%)`;
-            undoButton.disabled = history.length === 0;
-            
-            const savedAutoLog = localStorage.getItem('aviator_autoLog');
-            autoLogToggle.checked = (savedAutoLog === 'true' || savedAutoLog === null);
+
+        function updateHistory(newRound) {
+            history.unshift(newRound); // Add to the start
+            if (history.length > 50) { // Store more for better learning
+                history.pop(); 
+            }
+            localStorage.setItem('aviator_history', JSON.stringify(history));
+            renderHistory();
         }
 
         function renderHistory() {
             historyListEl.innerHTML = history.map(item => {
                 const zoneClass = getZoneClass(parseFloat(item.actual));
-                
                 return `<div class="history-item">
-                    [${item.time}] Round #${item.roundNum}: <span class="${zoneClass}">${item.actual}x (${item.zone})</span>
+                    [${item.time} / ${item.cycleTime}] L: ${item.lastRound}x, P: ${item.predicted}x, A: <span class="${zoneClass}">${item.actual}x (${item.zone})</span>
                 </div>`;
             }).join('');
         }
 
-        function saveState() {
-            localStorage.setItem('aviator_totalRounds', totalRounds);
-            localStorage.setItem('aviator_errors', errors); 
-            localStorage.setItem('aviator_attempts', attempts); 
-            localStorage.setItem('aviator_history', JSON.stringify(history));
-            updateLearningStatus();
-            renderHistory();
-        }
-
-        // --- RISK ASSESSMENT LOGIC (UNCHANGED) ---
+        // --- NEW RISK ASSESSMENT FUNCTION ---
         function assessRiskByTime(currentCycleSecond) {
-            const windowSize = TIME_WINDOW_FOR_LEARNING; 
-            let redCount = 0; 
-            let orangeCount = 0; 
+            // Window of +/- 60 seconds (1 minute total)
+            const windowSize = 60; 
+            let redCount = 0;
+            let orangeCount = 0;
             let totalCount = 0;
 
             for (const item of history) {
-                const actualMultiplier = parseFloat(item.actual);
+                // Calculate difference in seconds, wrapping around the 720-second cycle
                 const itemCycleSecond = parseInt(item.cycleSecond);
                 let diff = Math.abs(currentCycleSecond - itemCycleSecond);
                 
+                // Handle wrap-around (e.g., 710s and 10s are close)
                 if (diff > CYCLE_SECONDS / 2) {
                     diff = CYCLE_SECONDS - diff;
                 }
 
-                if (diff <= windowSize / 2) { 
+                if (diff <= windowSize) {
                     totalCount++;
-                    if (actualMultiplier < 2.00) redCount++; 
-                    if (actualMultiplier >= 10.00) orangeCount++; 
+                    if (item.zone.includes('Red')) redCount++;
+                    if (item.zone.includes('Orange')) orangeCount++;
                 }
             }
             
             let message = '';
             
-            if (totalCount < 5) { 
-                message = `Caution: Insufficient data (${totalCount}) for risk analysis at this cycle time.`;
-                riskAssessmentEl.style.backgroundColor = '#555';
+            if (totalCount === 0) {
+                message = `Chukua tahadhari: Historia bado haitoshi katika muda huu (${getCycleTimeDisplay(currentCycleSecond)}).`;
             } else {
                 const redPercent = (redCount / totalCount) * 100;
                 const orangePercent = (orangeCount / totalCount) * 100;
 
                 if (redPercent > 60) {
-                    message = `🚨 **HIGH RISK!** ${redPercent.toFixed(0)}% crashed below 2.00x in this window.`;
-                    riskAssessmentEl.style.backgroundColor = '#E57373'; 
+                    message = `🚨 HATARI KUBWA! ${redPercent.toFixed(0)}% ya raundi zilizopita katika muda huu zimefungwa chini ya 2.00x.`;
+                    riskAssessmentEl.style.backgroundColor = '#E57373';
                 } else if (orangePercent > 10) {
-                    message = `💰 **JACKPOT STATS!** ${orangePercent.toFixed(0)}% hit 10.00x+ in this window.`;
-                    riskAssessmentEl.style.backgroundColor = '#4CAF50'; 
+                    message = `💰 JACKPOT INAKUJA? ${orangePercent.toFixed(0)}% ya raundi zimefika 10.00x+ katika muda huu.`;
+                    riskAssessmentEl.style.backgroundColor = '#4CAF50';
                 } else {
-                    message = `🟢 **NORMAL CONDITIONS.** Risk is currently moderate (Rounds Found: ${totalCount}).`;
-                    riskAssessmentEl.style.backgroundColor = '#333'; 
+                    message = `🟢 HALI YA KAWAIDA. Hatari ni ndogo kwa sasa.`;
+                    riskAssessmentEl.style.backgroundColor = '#333';
                 }
             }
             riskAssessmentEl.textContent = message;
         }
 
-        // --- HANDLERS ---
+        // --- GAME LOGIC ---
+        function predictMultiplier(last) {
+            const errorFactor = 1 + (mistakes / 50); 
+            let prediction;
 
-        // 1. LOG ROUND
-        function logCurrentRound() {
-             const inputValue = parseFloat(roundInput.value);
-
-            if (isNaN(inputValue) || inputValue < 1.00) {
-                systemMessageEl.textContent = "Please enter a valid multiplier (>= 1.00).";
-                return;
+            if (last < 1.3) {
+                prediction = (Math.random() * 2 * errorFactor + 1.2); 
+            } else if (last >= 1.3 && last < 3.0) {
+                prediction = (Math.random() * 1.5 * errorFactor + 1.0);
+            } else {
+                prediction = (Math.random() * 0.5 * errorFactor + 1.0); 
             }
-
-            totalRounds++;
-            const actual = inputValue.toFixed(2);
-            
-            // Get current time stamp for logging
-            const now = new Date();
-            const totalSecondsOfDay = now.getHours() * 3600 + now.getMinutes() * 60 + now.getSeconds();
-            const cycleSeconds = totalSecondsOfDay % CYCLE_SECONDS;
-            
-            const historyEntry = {
-                roundNum: totalRounds,
-                time: formatTime(now), // Log real time HH:MM:SS
-                cycleTime: getCycleTimeDisplay(cycleSeconds), // Keep this for calculation compatibility
-                cycleSecond: cycleSeconds,
-                actual: actual,
-                zone: getZone(inputValue),
-            };
-            
-            history.unshift(historyEntry);
-            if (history.length > 50) { 
-                history.pop(); 
-            }
-
-            saveState();
-            systemMessageEl.textContent = `Round #${totalRounds} logged: ${actual}x.`;
-            roundInput.value = ''; 
+            return prediction.toFixed(2);
         }
 
-        logButton.addEventListener('click', logCurrentRound);
-
-        // 2. UNDO Last Round 
-        undoButton.addEventListener('click', () => {
-            if (history.length > 0) {
-                const lastRound = history.shift(); 
-                
-                if (totalRounds > 0) {
-                    totalRounds--; 
-                }
-                
-                attempts++;
-                errors++; 
-                
-                saveState();
-                systemMessageEl.textContent = `Last Round (${lastRound.actual}x) **UNDONE**. Total: ${totalRounds}`;
-                roundInput.value = lastRound.actual; 
-                // Allow manual correction if needed
-                roundInput.focus();
-            } else {
-                systemMessageEl.textContent = "No rounds to undo.";
-            }
-        });
-
-        // 3. RESET All Data 
-        resetButton.addEventListener('click', () => {
-             if (confirm("ARE YOU SURE you want to DELETE ALL logged history and start from Round #1? This cannot be undone.")) {
-                
-                attempts++;
-
-                localStorage.clear(); 
-                
-                totalRounds = 0;
-                errors = 0; 
-                attempts = 0;
-                history = [];
-                
-                saveState();
-                systemMessageEl.textContent = "Data Cleared. Start logging from Round #1.";
-            }
-        });
-        
-        // 4. AUTO-LOG TOGGLE HANDLER
-        autoLogToggle.addEventListener('change', () => {
-            localStorage.setItem('aviator_autoLog', autoLogToggle.checked);
-            systemMessageEl.textContent = `Voice Auto-Log is now ${autoLogToggle.checked ? 'ON' : 'OFF'}.`;
-        });
-
-
-        // --- VOICE INPUT LOGIC (WITH TOGGLE CHECK) ---
+        // --- VOICE INPUT LOGIC ---
         const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
 
         if (SpeechRecognition) {
@@ -505,11 +345,8 @@
 
             micBtn.addEventListener('click', () => {
                 micBtn.style.backgroundColor = MIC_BUTTON_RECORDING_COLOR;
-                micBtn.textContent = '🔴 SPEAK';
-                systemMessageEl.textContent = "Listening...";
+                micBtn.textContent = '🔴 TALK';
                 recognition.start();
-                // When microphone is active, force blur the input to discourage keyboard opening
-                roundInput.blur(); 
             });
 
             recognition.onresult = (event) => {
@@ -519,21 +356,10 @@
                 micBtn.textContent = '🎤';
 
                 if (numberMatch) {
-                    let multiplier = parseFloat(numberMatch[0]).toFixed(2);
-                    
-                    roundInput.value = multiplier;
-                    
-                    const isAutoLogOn = autoLogToggle.checked;
-
-                    if (isAutoLogOn) {
-                        systemMessageEl.textContent = `Voice Received: ${multiplier}x. Auto-Logging...`;
-                        logCurrentRound(); 
-                    } else {
-                        systemMessageEl.textContent = `Voice Received: ${multiplier}x. Press LOG ROUND RESULT to save.`;
-                    }
-                    
+                    roundInput.value = parseFloat(numberMatch[0]).toFixed(2);
+                    predictionResultEl.textContent = "Sauti Imepokelewa. Bonyeza kitufe.";
                 } else {
-                     systemMessageEl.textContent = "Could not understand. Try again or manually enter.";
+                     predictionResultEl.textContent = "Sikuelewi. Jaribu tena au andika.";
                 }
             };
             recognition.onspeechend = () => {
@@ -544,17 +370,91 @@
             recognition.onerror = () => {
                 micBtn.style.backgroundColor = MIC_BUTTON_DEFAULT_COLOR; 
                 micBtn.textContent = '🎤';
-                systemMessageEl.textContent = "Voice error or timeout. Try again.";
             };
 
         } else {
             micBtn.style.display = 'none';
         }
 
+        // --- MAIN BUTTON HANDLER ---
+        mainButton.addEventListener('click', () => {
+            const inputValue = parseFloat(roundInput.value);
+
+            if (isNaN(inputValue) || inputValue <= 0.99) {
+                predictionResultEl.textContent = "Weka namba sahihi (Multipler > 1.0)";
+                return;
+            }
+
+            if (isPredictionMode) {
+                // HATUA YA KWANZA: Fanya Utabiri
+                const lastRound = inputValue;
+                const predicted = predictMultiplier(lastRound);
+                const predictedMultiplier = parseFloat(predicted);
+                const currentZone = getZone(predictedMultiplier);
+                
+                lastPredicted = {
+                    time: formatTime(new Date()),
+                    cycleTime: getCycleTimeDisplay(getCurrentCycleSeconds()),
+                    cycleSecond: getCurrentCycleSeconds(),
+                    lastRound: lastRound.toFixed(2),
+                    predicted: predicted,
+                };
+                
+                // Badilisha UI kuingia kwenye 'Learn Mode'
+                roundLabel.textContent = "2. Weka Matokeo HALISI Ya Sasa (Kujifunza):";
+                mainButton.textContent = "INGIZA MATOKEO HALISI na Jifunze";
+                mainButton.classList.add('learn-mode');
+                roundInput.value = ''; 
+                isPredictionMode = false;
+
+                // Onyesha Matokeo
+                predictionResultEl.innerHTML = `NEXT PREDICTION: <span style="color:#FFC107;">${predicted}x</span>`;
+                zoneStatusEl.className = `zone-status ${getZoneClass(predictedMultiplier)}`;
+                zoneStatusEl.textContent = `Utabiri Huu ni: ${currentZone}`;
+
+
+            } else {
+                // HATUA YA PILI: Ingiza Matokeo Halisi na Jifunze (Log Result)
+                const actual = inputValue;
+                const predicted = parseFloat(lastPredicted.predicted);
+
+                // 1. Fanya Logic ya Kujifunza
+                attempts++;
+                if (Math.abs(predicted - actual) > 2.0) { 
+                    mistakes++;
+                }
+
+                // 2. Hifadhi Historia
+                const historyEntry = {
+                    ...lastPredicted,
+                    actual: actual.toFixed(2),
+                    zone: getZone(actual),
+                };
+                updateHistory(historyEntry);
+
+                // 3. Hifadhi data za kujifunza
+                localStorage.setItem('aviator_attempts', attempts);
+                localStorage.setItem('aviator_mistakes', mistakes);
+
+                // 4. Badilisha UI kurudi kwenye 'Predict Mode'
+                roundLabel.textContent = "1. Weka Matokeo ya Mzunguko Uliopita (Multiplier):";
+                mainButton.textContent = "1. Tabiri Mzunguko Unaofuata";
+                mainButton.classList.remove('learn-mode');
+                roundInput.value = actual.toFixed(2); // Weka matokeo halisi kama 'last round'
+                isPredictionMode = true;
+
+                updateLearningStatus();
+                predictionResultEl.textContent = "Kujifunza Kumekamilika. Tayari kwa Utabiri Mpya.";
+                zoneStatusEl.textContent = 'Learning Logged.';
+
+            }
+        });
+
         // Initialization
-        setInterval(updateClock, 1000); 
+        setInterval(updateClock, 1000); // Update clock every second
         updateLearningStatus();
         renderHistory();
+        assessRiskByTime(getCurrentCycleSeconds()); // Initial risk check
     </script>
 </body>
 </html>
